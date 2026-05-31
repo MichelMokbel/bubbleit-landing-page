@@ -1,0 +1,68 @@
+import { SectionHeader } from "@/components/ui";
+
+const benefits = [
+  {
+    title: "Easy Booking",
+    description: "Book your car wash in just a few taps.",
+  },
+  {
+    title: "Mobile Service",
+    description:
+      "No need to drive anywhere. Bubbleit comes to your location.",
+  },
+  {
+    title: "Booking Management",
+    description:
+      "View your upcoming bookings and service details from the app.",
+  },
+  {
+    title: "Secure Payment",
+    description:
+      "Pay in advance through the app when online payment is available.",
+  },
+  {
+    title: "Customer Support",
+    description: "Get updates and support for your booking when needed.",
+  },
+  {
+    title: "Arabic & English Ready",
+    description:
+      "Built to support customers in both Arabic and English when enabled.",
+  },
+];
+
+export function Benefits() {
+  return (
+    <section id="benefits" className="section-spacing">
+      <div className="section-shell">
+        <SectionHeader
+          eyebrow="Benefits"
+          title="Why Book With Bubbleit?"
+          description="Built around convenience, clarity, and a cleaner ownership experience."
+          titleId="benefits-title"
+        />
+
+        <div className="card-grid mt-12 md:grid-cols-2 xl:grid-cols-3">
+          {benefits.map((benefit, index) => (
+            <article
+              key={benefit.title}
+              className="glass-panel rounded-[var(--radius-card)] p-6"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--cyan)]/16 text-sm font-bold text-[color:var(--deep-blue)]">
+                  0{index + 1}
+                </div>
+                <h3 className="text-lg font-bold text-[color:var(--foreground)]">
+                  {benefit.title}
+                </h3>
+              </div>
+              <p className="mt-4 text-base leading-7 text-[color:var(--muted-foreground)]">
+                {benefit.description}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
