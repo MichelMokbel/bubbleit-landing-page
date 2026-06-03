@@ -22,21 +22,21 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[color:var(--border)] bg-white/88 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 overflow-visible border-b border-[color:var(--border)] bg-white/88 backdrop-blur-xl">
       <div className="section-shell">
-        <div className="flex min-h-18 items-center justify-between gap-4">
+        <div className="flex h-[64px] items-center justify-between gap-3 md:h-[72px] md:gap-4 lg:h-[78px]">
           <a
             href="#top"
-            className="flex shrink-0 items-center"
+            className="flex shrink-0 items-center overflow-visible"
             aria-label="Bubbleit home"
           >
             <Image
-              src="/assets/brand/logo-secondary.svg"
+              src="/assets/brand/logo-secondary.png"
               alt="Bubbleit logo"
-              width={184}
-              height={44}
+              width={1600}
+              height={510}
               priority
-              className="h-10 w-auto"
+              className="block w-[145px] h-auto max-h-[44px] shrink-0 object-contain md:w-[170px] md:max-h-[50px] lg:w-[205px] lg:max-h-[58px]"
             />
           </a>
 
@@ -60,7 +60,7 @@ export function Navbar() {
 
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[color:var(--border)] text-[color:var(--navy)] transition hover:border-[color:var(--blue)] hover:text-[color:var(--blue)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--blue)] lg:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border)] text-[color:var(--navy)] transition hover:border-[color:var(--blue)] hover:text-[color:var(--blue)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--blue)] lg:hidden"
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
