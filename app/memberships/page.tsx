@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { OtpSignIn } from "@/components/booking/OtpSignIn";
+import { AuthPanel } from "@/components/booking/AuthPanel";
 import {
   ApiError,
   buyMembership,
@@ -87,7 +87,12 @@ export default function MembershipsPage() {
     }
     setBusy(true);
     try {
-      await buyMembership(plan.id);
+      const result = await buyMembership(plan.id);
+      if (result.pay_url) {
+        // SkipCash hosted checkout — webhook auto-activates on payment.
+        window.location.assign(result.pay_url);
+        return;
+      }
       setBought(true);
       refreshMine();
     } catch (e) {
@@ -238,7 +243,7 @@ export default function MembershipsPage() {
       {needsAuth && buyingPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md">
-            <OtpSignIn
+            <AuthPanel
               title={t("Sign in to buy a membership.")}
               onClose={() => setNeedsAuth(false)}
               onAuthed={async () => {
@@ -246,7 +251,11 @@ export default function MembershipsPage() {
                 setAuthed(true);
                 refreshMine();
                 await buyMembership(buyingPlan.id)
-                  .then(() => {
+                  .then((result) => {
+                    if (result.pay_url) {
+                      window.location.assign(result.pay_url);
+                      return;
+                    }
                     setBought(true);
                     refreshMine();
                   })

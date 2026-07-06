@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import Link from "next/link";
+import { AuthPanel } from "@/components/booking/AuthPanel";
 import {
   ApiError,
   createAddress,
@@ -12,9 +13,6 @@ import {
   getServices,
   getToken,
   me,
-  requestOtp,
-  updateProfile,
-  verifyOtp,
 } from "@/lib/api/client";
 import type { Booking, Service, Slot, VehicleType, WashTarget } from "@/lib/api/types";
 import { localized, useI18n } from "@/lib/i18n";
@@ -102,10 +100,6 @@ export function BookingWizard() {
   const [notes, setNotes] = useState("");
 
   // Step 5 — identity + confirm
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
   const [authed, setAuthed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,11 +111,7 @@ export function BookingWizard() {
       .catch(() => setLoadError(true));
     if (getToken()) {
       me()
-        .then((customer) => {
-          setAuthed(true);
-          setName(customer.name);
-          setPhone(customer.phone);
-        })
+        .then(() => setAuthed(true))
         .catch(() => setAuthed(false));
     }
   }, []);
@@ -201,28 +191,10 @@ export function BookingWizard() {
     );
   }
 
-  async function sendOtp() {
-    setError(null);
-    try {
-      await requestOtp(phone.trim());
-      setOtpSent(true);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not send the code. Try again.");
-    }
-  }
-
   async function submit() {
     setSubmitting(true);
     setError(null);
     try {
-      if (!authed) {
-        const result = await verifyOtp(phone.trim(), otp.trim());
-        if (result.is_new || !result.customer.name) {
-          await updateProfile({ name: name.trim() });
-        }
-        setAuthed(true);
-      }
-
       const address = await createAddress({
         label: "Home",
         area: area.trim(),
@@ -266,8 +238,6 @@ export function BookingWizard() {
         setError(t("That slot was just taken. Please pick another time."));
         setStep(2);
         loadSlots(date);
-      } else if (e instanceof ApiError && e.status === 422 && !authed) {
-        setError(e.message);
       } else {
         setError(e instanceof ApiError ? e.message : t("Something went wrong. Please try again."));
       }
@@ -468,78 +438,15 @@ export function BookingWizard() {
 
         {step === 4 && (
           <StepPanel
-            title={authed ? t("Review & confirm") : t("Verify your phone")}
-            subtitle={
-              authed
-                ? t("Everything look right?")
-                : t("We'll text you a 6-digit code to confirm your booking.")
-            }
+            title={t("Review & confirm")}
+            subtitle={t("Everything look right?")}
           >
             {!authed && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={t("Your name")} required>
-                  <input
-                    className="wizard-input"
-                    placeholder={t("Full name")}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </Field>
-                <Field label={t("Phone number")} required>
-                  <div className="flex gap-2">
-                    <input
-                      className="wizard-input flex-1"
-                      placeholder="+974 5555 5555"
-                      inputMode="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/[^\d+\s]/g, ""))}
-                      disabled={otpSent}
-                    />
-                    {!otpSent && (
-                      <button
-                        type="button"
-                        className="secondary-button whitespace-nowrap px-4"
-                        disabled={phone.replace(/\D/g, "").length < 7 || !name.trim()}
-                        onClick={sendOtp}
-                      >
-                        {t("Send code")}
-                      </button>
-                    )}
-                  </div>
-                </Field>
-                {otpSent && (
-                  <Field label={t("Verification code")} required>
-                    <input
-                      className="wizard-input tracking-[0.4em]"
-                      placeholder="••••••"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                    />
-                    <span className="mt-1 flex items-center gap-4">
-                      <button
-                        type="button"
-                        className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold text-[color:var(--blue)] hover:underline"
-                        onClick={sendOtp}
-                      >
-                        {t("Resend code")}
-                      </button>
-                      <button
-                        type="button"
-                        className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold text-[color:var(--muted-foreground)] hover:text-[color:var(--navy)] hover:underline"
-                        onClick={() => {
-                          setOtpSent(false);
-                          setOtp("");
-                          setError(null);
-                        }}
-                      >
-                        {t("Change phone number")}
-                      </button>
-                    </span>
-                  </Field>
-                )}
-              </div>
+              <AuthPanel
+                inline
+                title={t("Sign in to confirm your booking.")}
+                onAuthed={() => setAuthed(true)}
+              />
             )}
 
             <Summary
@@ -593,7 +500,7 @@ export function BookingWizard() {
               <button
                 type="button"
                 className="primary-button w-full disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-                disabled={submitting || (!authed && (otp.length !== 6 || !name.trim()))}
+                disabled={submitting || !authed}
                 onClick={submit}
               >
                 {submitting ? t("Confirming…") : payOnline ? t("Confirm & Pay") : t("Confirm Booking")}

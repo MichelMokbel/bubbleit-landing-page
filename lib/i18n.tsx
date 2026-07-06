@@ -178,6 +178,26 @@ const AR: Record<string, string> = {
   "Add a vehicle": "أضف سيارة",
   "Free with membership": "مجاناً مع الاشتراك",
   "Exterior wash only, between 12am and 5am.": "غسيل خارجي فقط، من ١٢ ليلاً حتى ٥ فجراً.",
+
+  // Password auth
+  "Enter your phone number to sign in or create your account.":
+    "أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.",
+  "Welcome back!": "أهلاً بعودتك!",
+  "Password": "كلمة المرور",
+  "Forgot password?": "نسيت كلمة المرور؟",
+  "New number — let's set up your account.": "رقم جديد — لننشئ حسابك.",
+  "Add a password for your account": "أضف كلمة مرور لحسابك",
+  "Verify on WhatsApp": "تحقق عبر واتساب",
+  "Password must be at least 6 characters.": "كلمة المرور 6 أحرف على الأقل.",
+  "We sent a 6-digit code to your WhatsApp — enter it to finish.":
+    "أرسلنا رمزاً من 6 أرقام إلى واتساب — أدخله للإكمال.",
+  "Create account": "إنشاء الحساب",
+  "We sent a 6-digit code to your WhatsApp. Enter it and choose a new password.":
+    "أرسلنا رمزاً من 6 أرقام إلى واتساب. أدخله واختر كلمة مرور جديدة.",
+  "New password": "كلمة مرور جديدة",
+  "Sign in to confirm your booking.": "سجّل الدخول لتأكيد حجزك.",
+  "Redirecting to secure payment…": "جاري التحويل إلى الدفع الآمن…",
+  "Payment received — your membership is active!": "تم الدفع — اشتراكك فعّال الآن!",
 };
 
 type I18n = {

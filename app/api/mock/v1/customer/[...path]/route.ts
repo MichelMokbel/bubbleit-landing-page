@@ -100,6 +100,53 @@ async function handle(req: NextRequest, segments: string[]) {
   }
 
   // ── Auth ──
+  if (method === "POST" && path === "auth/check-phone") {
+    const existing = store.customers.find((c) => c.phone === String(body.phone ?? "").trim());
+    return envelope({ registered: !!(existing && existing.password) });
+  }
+
+  if (method === "POST" && path === "auth/login") {
+    const existing = store.customers.find((c) => c.phone === String(body.phone ?? "").trim());
+    if (!existing || !existing.password || existing.password !== String(body.password ?? "")) {
+      return fail(422, "Invalid phone number or password.");
+    }
+    const token = `mock_${crypto.randomUUID()}`;
+    store.tokens.set(token, existing.id);
+    const { vehicles: _v, addresses: _a, password: _p, ...publicCustomer } = existing;
+    return envelope({ token, customer: publicCustomer, is_new: false });
+  }
+
+  if (method === "POST" && path === "auth/register") {
+    const phone = String(body.phone ?? "").trim();
+    if (store.otps.get(phone) !== String(body.code ?? "").trim()) {
+      return fail(422, "The verification code is invalid or has expired.");
+    }
+    store.otps.delete(phone);
+    let existing = store.customers.find((c) => c.phone === phone);
+    if (existing && existing.password) {
+      return fail(422, "This phone number is already registered. Please sign in.");
+    }
+    if (!existing) {
+      existing = {
+        id: store.nextId++,
+        name: String(body.name ?? "").trim(),
+        phone,
+        email: null,
+        password: String(body.password ?? ""),
+        vehicles: [],
+        addresses: [],
+      };
+      store.customers.push(existing);
+    } else {
+      existing.password = String(body.password ?? "");
+      if (!existing.name) existing.name = String(body.name ?? "").trim();
+    }
+    const token = `mock_${crypto.randomUUID()}`;
+    store.tokens.set(token, existing.id);
+    const { vehicles: _v, addresses: _a, password: _p, ...publicCustomer } = existing;
+    return envelope({ token, customer: publicCustomer, is_new: true }, { status: 201 });
+  }
+
   if (method === "POST" && path === "auth/request-otp") {
     const phone = String(body.phone ?? "").trim();
     if (!/^\+?\d{7,15}$/.test(phone)) {
@@ -124,6 +171,7 @@ async function handle(req: NextRequest, segments: string[]) {
         name: "",
         phone,
         email: null,
+        password: null,
         vehicles: [],
         addresses: [],
       };
@@ -131,7 +179,7 @@ async function handle(req: NextRequest, segments: string[]) {
     }
     const token = `mock_${crypto.randomUUID()}`;
     store.tokens.set(token, customer.id);
-    const { vehicles: _v, addresses: _a, ...publicCustomer } = customer;
+    const { vehicles: _v, addresses: _a, password: _pw, ...publicCustomer } = customer;
     return envelope({ token, customer: publicCustomer, is_new: isNew });
   }
 
@@ -140,7 +188,7 @@ async function handle(req: NextRequest, segments: string[]) {
   if (!customer) return fail(401, "Unauthenticated.");
 
   if (method === "GET" && path === "auth/me") {
-    const { vehicles: _v, addresses: _a, ...publicCustomer } = customer;
+    const { vehicles: _v, addresses: _a, password: _pw, ...publicCustomer } = customer;
     return envelope(publicCustomer);
   }
 
@@ -153,7 +201,8 @@ async function handle(req: NextRequest, segments: string[]) {
   if (method === "PUT" && path === "profile") {
     if (typeof body.name === "string") customer.name = body.name.trim();
     if (typeof body.email === "string") customer.email = body.email.trim() || null;
-    const { vehicles: _v, addresses: _a, ...publicCustomer } = customer;
+    if (typeof body.password === "string" && body.password) customer.password = body.password;
+    const { vehicles: _v, addresses: _a, password: _pw, ...publicCustomer } = customer;
     return envelope(publicCustomer);
   }
 
@@ -235,7 +284,7 @@ async function handle(req: NextRequest, segments: string[]) {
       membership.expires_at = new Date(Date.now() + 30 * 864e5).toISOString() as never;
     }, 5000);
     const { customer_id: _c, ...pub } = membership;
-    return envelope(pub, { status: 201, message: "Membership requested." });
+    return envelope({ ...pub, pay_url: null }, { status: 201, message: "Membership requested." });
   }
 
   // ── Bookings ──

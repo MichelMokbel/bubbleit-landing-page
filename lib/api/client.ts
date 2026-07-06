@@ -92,6 +92,39 @@ export function getMembershipPlans() {
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
+export function checkPhone(phone: string) {
+  return request<{ registered: boolean }>("/auth/check-phone", {
+    method: "POST",
+    body: { phone },
+    auth: false,
+  });
+}
+
+export async function loginWithPassword(phone: string, password: string) {
+  const result = await request<VerifyOtpResult>("/auth/login", {
+    method: "POST",
+    body: { phone, password },
+    auth: false,
+  });
+  setToken(result.token);
+  return result;
+}
+
+export async function register(payload: {
+  phone: string;
+  name: string;
+  password: string;
+  code: string;
+}) {
+  const result = await request<VerifyOtpResult>("/auth/register", {
+    method: "POST",
+    body: payload,
+    auth: false,
+  });
+  setToken(result.token);
+  return result;
+}
+
 export function requestOtp(phone: string) {
   return request<null>("/auth/request-otp", {
     method: "POST",
@@ -122,7 +155,7 @@ export async function logout() {
   }
 }
 
-export function updateProfile(payload: { name: string; email?: string }) {
+export function updateProfile(payload: { name: string; email?: string; password?: string }) {
   return request<Customer>("/profile", { method: "PUT", body: payload });
 }
 
@@ -147,7 +180,7 @@ export function listMemberships() {
 }
 
 export function buyMembership(planId: number) {
-  return request<CustomerMembership>("/memberships", {
+  return request<CustomerMembership & { pay_url: string | null }>("/memberships", {
     method: "POST",
     body: { plan_id: planId },
   });

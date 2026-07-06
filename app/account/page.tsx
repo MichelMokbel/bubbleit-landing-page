@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { OtpSignIn } from "@/components/booking/OtpSignIn";
+import { AuthPanel } from "@/components/booking/AuthPanel";
 import { useI18n } from "@/lib/i18n";
 import {
   ApiError,
@@ -85,7 +85,7 @@ export default function AccountPage() {
       <main className="section-shell min-h-[60dvh] py-10 sm:py-14">
         {!checked ? null : !customer ? (
           <div className="mx-auto max-w-md">
-            <OtpSignIn
+            <AuthPanel
               onAuthed={(c) => {
                 setCustomer(c);
                 refresh();

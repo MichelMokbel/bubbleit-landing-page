@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { OtpSignIn } from "@/components/booking/OtpSignIn";
+import { AuthPanel } from "@/components/booking/AuthPanel";
 import {
   ApiError,
   createBooking,
@@ -127,7 +127,7 @@ function RedeemInner() {
   if (authed === false) {
     return (
       <div className="mx-auto max-w-md">
-        <OtpSignIn onAuthed={() => load()} />
+        <AuthPanel onAuthed={() => load()} />
       </div>
     );
   }

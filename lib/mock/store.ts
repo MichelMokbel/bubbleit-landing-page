@@ -16,7 +16,7 @@ import type {
 export const MOCK_OTP = "123456";
 
 export type MockDB = {
-  customers: (Customer & { vehicles: Vehicle[]; addresses: Address[] })[];
+  customers: (Customer & { password: string | null; vehicles: Vehicle[]; addresses: Address[] })[];
   memberships: (CustomerMembership & { customer_id: number })[];
   tokens: Map<string, number>; // token -> customer id
   otps: Map<string, string>; // phone -> code
