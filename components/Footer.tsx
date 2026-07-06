@@ -19,18 +19,58 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2">
+          <div className="grid gap-8 sm:grid-cols-3">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/72">
+                Book
+              </h2>
+              <div className="mt-4 flex flex-col gap-3 text-base">
+                <a
+                  href="/book"
+                  className="text-white/82 transition hover:text-[color:var(--cyan)]"
+                >
+                  Book a Wash
+                </a>
+                <a
+                  href="/account"
+                  className="text-white/82 transition hover:text-[color:var(--cyan)]"
+                >
+                  My Bookings
+                </a>
+              </div>
+            </div>
+
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/72">
                 Contact
               </h2>
-              <p className="mt-4 text-base text-white">+974 XX XXX XXX</p>
+              <p className="mt-4 text-base text-white">+974 7788 6668</p>
               <a
-                href="#"
+                href="https://wa.me/97477886668"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-3 inline-flex text-base font-medium text-[color:var(--cyan)] transition hover:text-white"
               >
                 WhatsApp
               </a>
+              <div className="mt-3 flex flex-col gap-2 text-base">
+                <a
+                  href="https://instagram.com/bubbleitqa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/82 transition hover:text-[color:var(--cyan)]"
+                >
+                  Instagram @bubbleitqa
+                </a>
+                <a
+                  href="https://tiktok.com/@bubbleitqa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/82 transition hover:text-[color:var(--cyan)]"
+                >
+                  TikTok @bubbleitqa
+                </a>
+              </div>
             </div>
 
             <div>

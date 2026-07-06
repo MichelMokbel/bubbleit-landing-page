@@ -1,0 +1,125 @@
+// Types mirror docs/api-contract/customer-contract-v1.md (bubbleit-mobile repo).
+// The envelope and paginator shapes are identical to the admin API.
+
+export type Envelope<T> = {
+  success: boolean;
+  message: string;
+  data: T;
+  errors: Record<string, string[]> | null;
+};
+
+export type Paginated<T> = {
+  data: T[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    total: number;
+    per_page: number;
+  };
+};
+
+export type AddOn = {
+  id: number;
+  name: string;
+  price: number;
+};
+
+export type VehicleType = "sedan" | "suv";
+
+export type Service = {
+  id: number;
+  name: string;
+  description: string;
+  price: number; // salon price
+  price_suv: number;
+  category: string;
+  add_ons: AddOn[];
+};
+
+export type Slot = {
+  start: string; // "08:00"
+  end: string; // "09:00"
+  available: boolean;
+};
+
+export type Availability = {
+  date: string; // "YYYY-MM-DD"
+  slots: Slot[];
+};
+
+export type Customer = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+};
+
+export type Vehicle = {
+  id: number;
+  make: string;
+  model: string;
+  year: number | null;
+  color: string;
+  plate_number: string;
+  type: VehicleType;
+};
+
+export type Address = {
+  id: number;
+  label: string;
+  area: string;
+  details: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export type PaymentMethod = "pay_on_site" | "online";
+
+export type BookingStatus =
+  | "pending_payment"
+  | "paid"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "cancelled_by_customer"
+  | "cancelled_by_admin"
+  | "no_show";
+
+export type BookingCar = {
+  vehicle: Vehicle;
+  service: Pick<Service, "id" | "name" | "price">;
+  add_ons: AddOn[];
+  subtotal: number;
+};
+
+export type Booking = {
+  id: number;
+  reference: string;
+  status: BookingStatus;
+  status_label: string;
+  scheduled_at: string; // ISO
+  payment_method: PaymentMethod;
+  total: number;
+  address_area: string;
+  notes: string;
+  cars: BookingCar[];
+  created_at: string;
+  payment?: { checkout_url: string | null };
+};
+
+export type VerifyOtpResult = {
+  token: string;
+  customer: Customer;
+  is_new: boolean;
+};
+
+export type CreateBookingPayload = {
+  scheduled_at: string;
+  cars: { vehicle_id: number; service_id: number; add_on_ids: number[] }[];
+  address_id?: number;
+  address_area?: string;
+  latitude?: number;
+  longitude?: number;
+  payment_method: PaymentMethod;
+  notes?: string;
+};

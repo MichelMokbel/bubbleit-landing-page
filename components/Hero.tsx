@@ -73,10 +73,10 @@ export function Hero() {
             </p>
 
             <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <AppButton href="#download" className="sm:min-w-[10.5rem]">
+              <AppButton href="/book" className="sm:min-w-[10.5rem]">
                 Book a Wash
               </AppButton>
-              <AppButton href="#how-it-works" variant="secondary" className="sm:min-w-[10.5rem]">
+              <AppButton href="/#how-it-works" variant="secondary" className="sm:min-w-[10.5rem]">
                 How it Works
               </AppButton>
             </div>

@@ -44,19 +44,16 @@ function GooglePlayIcon() {
 function StoreBadge({
   label,
   platform,
-  href,
 }: {
   label: string;
   platform: string;
-  href: string;
 }) {
   return (
-    <a
-      href={href}
-      aria-label={`Download Bubbleit on ${label}`}
-      className="inline-flex min-h-14 items-center gap-3 rounded-[22px] border border-white/18 bg-[#11152f]/72 px-4 py-3 text-left text-white shadow-[0_14px_30px_rgba(12,18,44,0.22)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-[#171d40]/80"
+    <span
+      aria-label={`Bubbleit on ${label} — coming soon`}
+      className="relative inline-flex min-h-14 cursor-default items-center gap-3 rounded-[22px] border border-white/14 bg-[#11152f]/55 px-4 py-3 text-left text-white/75 shadow-[0_14px_30px_rgba(12,18,44,0.22)] backdrop-blur-md"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8 opacity-70">
         {platform === "apple" ? (
           <AppleStoreIcon />
         ) : (
@@ -64,12 +61,12 @@ function StoreBadge({
         )}
       </span>
       <span>
-        <span className="block text-[0.68rem] font-medium uppercase tracking-[0.18em] text-white/58">
-          Download on
+        <span className="block text-[0.68rem] font-medium uppercase tracking-[0.18em] text-[color:var(--cyan)]">
+          Coming soon
         </span>
         <span className="mt-0.5 block text-sm font-semibold">{label}</span>
       </span>
-    </a>
+    </span>
   );
 }
 
@@ -85,7 +82,7 @@ export function AppCTA() {
           <div className="relative grid items-center gap-14 lg:grid-cols-[65%_35%] lg:gap-10">
             <div className="mx-auto w-full max-w-[42rem] text-center lg:mx-0 lg:text-left">
               <span className="inline-flex rounded-full border border-white/16 bg-white/10 px-4 py-2 text-sm font-medium text-white/88 backdrop-blur-md">
-                Download Bubbleit
+                Book on the Web — App Coming Soon
               </span>
 
               <h2
@@ -96,30 +93,30 @@ export function AppCTA() {
               </h2>
 
               <p className="mt-5 max-w-[37.5rem] text-base leading-8 text-white/78 sm:text-lg">
-                Download the Bubbleit app or open the web app to schedule your
-                next booking in minutes, manage upcoming washes, and stay updated
-                from one clean mobile experience.
+                Book your next wash on the web in minutes — pick your service,
+                time, and location, and manage your bookings from any device.
+                The Bubbleit mobile app is on its way.
               </p>
 
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap lg:items-start">
                 <AppButton
-                  href="#"
+                  href="/book"
                   className="min-w-[12rem] bg-white text-[color:var(--navy)] hover:bg-[#eaf8ff]"
                 >
-                  Download App
+                  Book a Wash Now
                 </AppButton>
                 <AppButton
-                  href="#"
+                  href="/account"
                   variant="secondary"
                   className="min-w-[12rem] border-white/20 bg-white/10 text-white backdrop-blur-md hover:border-white/40 hover:bg-white/14 hover:text-white"
                 >
-                  Open Web App
+                  My Bookings
                 </AppButton>
               </div>
 
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap lg:items-start">
-                <StoreBadge label="App Store" platform="apple" href="#" />
-                <StoreBadge label="Google Play" platform="play" href="#" />
+                <StoreBadge label="App Store" platform="apple" />
+                <StoreBadge label="Google Play" platform="play" />
               </div>
             </div>
 
@@ -253,7 +250,7 @@ export function AppCTA() {
                     </span>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--blue)]">
-                        Scan to download
+                        App coming soon
                       </p>
                     </div>
                   </div>

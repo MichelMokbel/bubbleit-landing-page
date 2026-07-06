@@ -1,15 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { AppButton } from "@/components/ui";
 
+// Absolute paths so the links work from /book and /account too.
 const navItems = [
-  { label: "Services", href: "#services" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Benefits", href: "#benefits" },
-  { label: "Download", href: "#download" },
+  { label: "Services", href: "/#services" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Benefits", href: "/#benefits" },
+  { label: "Download", href: "/#download" },
 ];
 
 export function Navbar() {
@@ -25,8 +27,8 @@ export function Navbar() {
     <header className="sticky top-0 z-50 overflow-visible border-b border-[color:var(--border)] bg-white/88 backdrop-blur-xl">
       <div className="section-shell">
         <div className="flex h-[64px] items-center justify-between gap-3 md:h-[72px] md:gap-4 lg:h-[78px]">
-          <a
-            href="#top"
+          <Link
+            href="/"
             className="flex shrink-0 items-center overflow-visible"
             aria-label="Bubbleit home"
           >
@@ -38,7 +40,7 @@ export function Navbar() {
               priority
               className="block w-[145px] h-auto max-h-[44px] shrink-0 object-contain md:w-[170px] md:max-h-[50px] lg:w-[205px] lg:max-h-[58px]"
             />
-          </a>
+          </Link>
 
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary">
             {navItems.map((item) => (
@@ -52,9 +54,15 @@ export function Navbar() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex">
-            <AppButton href="#" className="px-5">
-              Open App
+          <div className="hidden items-center gap-3 lg:flex">
+            <a
+              href="/account"
+              className="text-sm font-medium text-[color:var(--muted-foreground)] transition hover:text-[color:var(--navy)]"
+            >
+              My Bookings
+            </a>
+            <AppButton href="/book" className="px-5">
+              Book Now
             </AppButton>
           </div>
 
@@ -112,8 +120,15 @@ export function Navbar() {
                   {item.label}
                 </a>
               ))}
-              <AppButton href="#" className="mt-2 w-full" variant="primary">
-                Open App
+              <a
+                href="/account"
+                className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--foreground)] transition hover:bg-[color:var(--background)]"
+                onClick={() => setIsOpen(false)}
+              >
+                My Bookings
+              </a>
+              <AppButton href="/book" className="mt-2 w-full" variant="primary">
+                Book Now
               </AppButton>
             </nav>
           </div>

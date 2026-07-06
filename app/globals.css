@@ -102,6 +102,10 @@ img {
   @apply grid gap-5 md:gap-6;
 }
 
+.wizard-input {
+  @apply w-full rounded-xl border border-[color:var(--border)] bg-white px-4 py-2.5 text-sm text-[color:var(--foreground)] outline-none transition placeholder:text-[color:var(--muted-foreground)]/60 focus:border-[color:var(--blue)] focus:ring-2 focus:ring-[color:var(--cyan)]/30 disabled:bg-[color:var(--background)] disabled:text-[color:var(--muted-foreground)];
+}
+
 .pattern-fade {
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), transparent);
 }
