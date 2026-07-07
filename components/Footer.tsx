@@ -47,7 +47,7 @@ export function Footer() {
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/72">
                 {t("Contact")}
               </h2>
-              <p className="mt-4 text-base text-white">+974 7788 6668</p>
+              <p dir="ltr" className="mt-4 text-base text-white rtl:text-right">+974 7788 6668</p>
               <a
                 href="https://wa.me/97477886668"
                 target="_blank"
