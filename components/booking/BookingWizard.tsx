@@ -268,11 +268,16 @@ export function BookingWizard() {
         scheduled_at: `${date}T${slot}:00`,
         cars: carPayloads,
         address_id: address.id,
-        payment_method: "pay_on_site",
+        payment_method: "online",
         notes: notes.trim() || undefined,
         promo_code: promoActive ? applied.code : undefined,
       });
 
+      // Online-only: hand off to the SkipCash hosted checkout.
+      if (booking.payment?.checkout_url) {
+        window.location.assign(booking.payment.checkout_url);
+        return;
+      }
       setConfirmed(booking);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -451,12 +456,12 @@ export function BookingWizard() {
         )}
 
         {step === 3 && (
-          <StepPanel title={t("How would you like to pay?")} subtitle={t("Pay securely online, or in person when we arrive.")}>
+          <StepPanel title={t("Payment")} subtitle={t("Secure online payment. You'll be redirected to complete it after confirming.")}>
             <PayOption
               active
               onClick={() => {}}
-              title={t("Pay on site")}
-              description={t("Cash or card when the team arrives.")}
+              title={t("Pay online (SkipCash)")}
+              description={t("Secure card payment. We'll take you to the checkout after you confirm.")}
             />
             <Field label={t("Notes for the team (optional)")}>
               <textarea
@@ -920,7 +925,7 @@ function Summary({
         </li>
         <li className="flex justify-between">
           <span className="text-[color:var(--muted-foreground)]">{t("Payment")}</span>
-          <span className="font-medium">{t("Pay on site")}</span>
+          <span className="font-medium">{t("Pay online (SkipCash)")}</span>
         </li>
         {discount > 0 && (
           <>
@@ -1036,9 +1041,11 @@ function SuccessPanel({ booking }: { booking: Booking }) {
         <br />
         {booking.address_area}
         <br />
-        {booking.payment_method === "pay_on_site"
-          ? `Pay ${fmt(booking.total)} when the team arrives.`
-          : `Paid ${fmt(booking.total)} online.`}
+        {booking.total <= 0
+          ? "Covered by your membership."
+          : booking.status === "paid"
+            ? `Paid ${fmt(booking.total)} online.`
+            : `A secure payment link for ${fmt(booking.total)} will follow to confirm your booking.`}
       </p>
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Link href="/account" className="primary-button">

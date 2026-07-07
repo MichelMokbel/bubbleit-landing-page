@@ -137,6 +137,8 @@ export type Booking = {
   notes: string;
   cars: BookingCar[];
   created_at: string;
+  // Present on create for online bookings: the SkipCash hosted-checkout URL.
+  payment?: { checkout_url: string | null };
 };
 
 export type VerifyOtpResult = {

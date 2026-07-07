@@ -99,6 +99,11 @@ const AR: Record<string, string> = {
   "Cash or card when the team arrives.": "نقداً أو ببطاقة عند وصول الفريق.",
   "Pay online now": "الدفع أونلاين غير متاح حالياً",
   "Secure card payment at confirmation.": "حالياً نؤكد الحجز أولاً ثم يتم الدفع لاحقاً.",
+  "Secure online payment. You'll be redirected to complete it after confirming.":
+    "دفع إلكتروني آمن. سيتم تحويلك لإتمام الدفع بعد التأكيد.",
+  "Pay online (SkipCash)": "الدفع أونلاين (سكيب كاش)",
+  "Secure card payment. We'll take you to the checkout after you confirm.":
+    "دفع آمن بالبطاقة. سننقلك إلى صفحة الدفع بعد التأكيد.",
   "Notes for the team (optional)": "ملاحظات للفريق (اختياري)",
   "Gate code, preferred parking spot…": "رمز البوابة، مكان الوقوف المفضل…",
   "Verify your phone": "تأكيد رقم هاتفك",
