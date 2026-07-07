@@ -156,4 +156,16 @@ export type CreateBookingPayload = {
   longitude?: number;
   payment_method?: PaymentMethod;
   notes?: string;
+  promo_code?: string;
+};
+
+// Result of validating a promo code against the current cart. All rule
+// enforcement (expiry, usage limits, minimum spend, service scoping) lives
+// server-side; the client only sends the cart and renders the outcome.
+export type PromoValidation = {
+  valid: boolean;
+  code: string;
+  discount_amount: number;
+  final_total: number;
+  message: string | null;
 };

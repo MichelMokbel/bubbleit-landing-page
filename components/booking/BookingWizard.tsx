@@ -13,6 +13,7 @@ import {
   getServices,
   getToken,
   me,
+  validatePromo,
 } from "@/lib/api/client";
 import type { Booking, Service, Slot, VehicleType, WashTarget } from "@/lib/api/types";
 import { localized, useI18n } from "@/lib/i18n";
@@ -138,6 +139,50 @@ export function BookingWizard() {
     [cars, services],
   );
 
+  // Promo code — validated server-side against the cart subtotal + services.
+  const [promoInput, setPromoInput] = useState("");
+  const [applied, setApplied] = useState<{ code: string; discount: number; subtotal: number } | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  // A discount is only honoured while the cart still matches what was validated.
+  const promoActive = applied !== null && applied.subtotal === total;
+  const discount = promoActive ? applied.discount : 0;
+  const netTotal = Math.max(0, total - discount);
+
+  const serviceIds = useMemo(
+    () => cars.map((c) => c.serviceId).filter((id): id is number => id !== null),
+    [cars],
+  );
+
+  const applyPromo = useCallback(async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code || total <= 0) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    try {
+      const res = await validatePromo(code, total, serviceIds);
+      if (res.valid) {
+        setApplied({ code: res.code || code, discount: res.discount_amount, subtotal: total });
+        setPromoError(null);
+      } else {
+        setApplied(null);
+        setPromoError(res.message ?? t("This code can't be applied."));
+      }
+    } catch (e) {
+      setApplied(null);
+      setPromoError(e instanceof ApiError ? e.message : t("Couldn't check that code."));
+    } finally {
+      setPromoBusy(false);
+    }
+  }, [promoInput, total, serviceIds, t]);
+
+  function clearPromo() {
+    setApplied(null);
+    setPromoInput("");
+    setPromoError(null);
+  }
+
   const carsValid = cars.every(
     (c) => c.serviceId !== null && c.make.trim() && c.model.trim() && c.plate.trim(),
   );
@@ -225,6 +270,7 @@ export function BookingWizard() {
         address_id: address.id,
         payment_method: "pay_on_site",
         notes: notes.trim() || undefined,
+        promo_code: promoActive ? applied.code : undefined,
       });
 
       setConfirmed(booking);
@@ -436,6 +482,18 @@ export function BookingWizard() {
               />
             )}
 
+            {authed && total > 0 && (
+              <PromoField
+                applied={promoActive ? applied : null}
+                value={promoInput}
+                busy={promoBusy}
+                error={promoError}
+                onChange={setPromoInput}
+                onApply={applyPromo}
+                onClear={clearPromo}
+              />
+            )}
+
             <Summary
               cars={cars}
               services={services}
@@ -444,6 +502,9 @@ export function BookingWizard() {
               date={date}
               slot={slot}
               total={total}
+              discount={discount}
+              netTotal={netTotal}
+              promoCode={promoActive ? applied.code : null}
             />
           </StepPanel>
         )}
@@ -459,7 +520,12 @@ export function BookingWizard() {
           <div className="text-sm text-[color:var(--muted-foreground)]">
             {total > 0 && (
               <>
-                {t("Total")} <span className="text-lg font-bold text-[color:var(--navy)]">{fmt(total)}</span>
+                {t("Total")} <span className="text-lg font-bold text-[color:var(--navy)]">{fmt(netTotal)}</span>
+                {discount > 0 && (
+                  <span className="ms-2 text-xs font-medium text-emerald-600">
+                    ({t("saved")} {fmt(discount)})
+                  </span>
+                )}
               </>
             )}
           </div>
@@ -786,6 +852,9 @@ function Summary({
   date,
   slot,
   total,
+  discount,
+  netTotal,
+  promoCode,
 }: {
   cars: CarDraft[];
   services: Service[];
@@ -794,6 +863,9 @@ function Summary({
   date: string;
   slot: string | null;
   total: number;
+  discount: number;
+  netTotal: number;
+  promoCode: string | null;
 }) {
   const { lang, t } = useI18n();
   const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString(lang === "ar" ? "ar" : "en", {
@@ -844,11 +916,93 @@ function Summary({
           <span className="text-[color:var(--muted-foreground)]">{t("Payment")}</span>
           <span className="font-medium">{t("Pay on site")}</span>
         </li>
+        {discount > 0 && (
+          <>
+            <li className="flex justify-between border-t border-[color:var(--border)] pt-2">
+              <span className="text-[color:var(--muted-foreground)]">{t("Subtotal")}</span>
+              <span className="font-medium">{fmt(total)}</span>
+            </li>
+            <li className="flex justify-between text-emerald-600">
+              <span>
+                {t("Discount")}
+                {promoCode && <span className="font-semibold"> ({promoCode})</span>}
+              </span>
+              <span className="font-semibold">− {fmt(discount)}</span>
+            </li>
+          </>
+        )}
         <li className="flex justify-between border-t border-[color:var(--border)] pt-2 text-base font-bold">
           <span>{t("Total")}</span>
-          <span>{fmt(total)}</span>
+          <span>{fmt(netTotal)}</span>
         </li>
       </ul>
+    </div>
+  );
+}
+
+function PromoField({
+  applied,
+  value,
+  busy,
+  error,
+  onChange,
+  onApply,
+  onClear,
+}: {
+  applied: { code: string; discount: number } | null;
+  value: string;
+  busy: boolean;
+  error: string | null;
+  onChange: (v: string) => void;
+  onApply: () => void;
+  onClear: () => void;
+}) {
+  const { t } = useI18n();
+  if (applied) {
+    return (
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <span className="text-sm font-semibold text-emerald-700">
+          ✓ {t("Code")} {applied.code} {t("applied")} — {t("you save")} {fmt(applied.discount)}
+        </span>
+        <button
+          type="button"
+          className="text-xs font-semibold text-red-600 hover:underline"
+          onClick={onClear}
+        >
+          {t("Remove")}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-4">
+      <label className="mb-1 block text-sm font-medium text-[color:var(--muted-foreground)]">
+        {t("Promo code")}
+      </label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          placeholder={t("e.g. SUMMER20")}
+          className="w-full rounded-2xl border border-[color:var(--border)] bg-white px-4 py-3 text-sm uppercase outline-none focus:border-[color:var(--blue)]"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onApply();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="secondary-button shrink-0 disabled:opacity-50"
+          disabled={busy || value.trim().length === 0}
+          onClick={onApply}
+        >
+          {busy ? t("Checking…") : t("Apply")}
+        </button>
+      </div>
+      {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
     </div>
   );
 }

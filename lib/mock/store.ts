@@ -15,12 +15,38 @@ import type {
 
 export const MOCK_OTP = "123456";
 
+export type MockPromoCode = {
+  id: number;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  value: number;
+  max_discount: number | null;
+  min_spend: number | null;
+  usage_limit: number | null;
+  per_customer_limit: number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  service_ids: number[]; // empty = all services
+  is_active: boolean;
+};
+
+export type MockPromoRedemption = {
+  id: number;
+  code: string;
+  customer_id: number;
+  booking_reference: string;
+  discount_amount: number;
+  redeemed_at: string;
+};
+
 export type MockDB = {
   customers: (Customer & { password: string | null; vehicles: Vehicle[]; addresses: Address[] })[];
   memberships: (CustomerMembership & { customer_id: number })[];
   tokens: Map<string, number>; // token -> customer id
   otps: Map<string, string>; // phone -> code
   bookings: (Booking & { customer_id: number })[];
+  promoCodes: MockPromoCode[];
+  redemptions: MockPromoRedemption[];
   nextId: number;
 };
 
@@ -106,8 +132,88 @@ function seed(): MockDB {
     tokens: new Map(),
     otps: new Map(),
     bookings: [],
+    promoCodes: [
+      {
+        id: 1,
+        code: "WELCOME10",
+        discount_type: "percentage",
+        value: 10,
+        max_discount: 30,
+        min_spend: null,
+        usage_limit: null,
+        per_customer_limit: 1,
+        valid_from: null,
+        valid_until: null,
+        service_ids: [],
+        is_active: true,
+      },
+      {
+        id: 2,
+        code: "SUMMER20",
+        discount_type: "fixed",
+        value: 20,
+        max_discount: null,
+        min_spend: 100,
+        usage_limit: 500,
+        per_customer_limit: null,
+        valid_from: null,
+        valid_until: null,
+        service_ids: [],
+        is_active: true,
+      },
+    ],
+    redemptions: [],
     nextId: 100,
   };
+}
+
+// Mirrors the server-side promo rules (expiry, usage limits, minimum spend,
+// service scoping). Returns the discount to apply, or a reason it can't.
+export function evaluatePromo(
+  db: MockDB,
+  rawCode: string,
+  customerId: number,
+  subtotal: number,
+  serviceIds: number[],
+): { valid: boolean; code: string; discount: number; message: string | null } {
+  const code = rawCode.trim().toUpperCase();
+  const promo = db.promoCodes.find((p) => p.code === code);
+  if (!promo || !promo.is_active) {
+    return { valid: false, code, discount: 0, message: "This promo code is not valid." };
+  }
+  const now = new Date();
+  if (promo.valid_from && new Date(promo.valid_from) > now) {
+    return { valid: false, code, discount: 0, message: "This code isn't active yet." };
+  }
+  if (promo.valid_until && new Date(promo.valid_until) < now) {
+    return { valid: false, code, discount: 0, message: "This code has expired." };
+  }
+  if (promo.min_spend != null && subtotal < promo.min_spend) {
+    return { valid: false, code, discount: 0, message: `Spend at least QR ${promo.min_spend} to use this code.` };
+  }
+  if (promo.service_ids.length > 0 && !serviceIds.some((id) => promo.service_ids.includes(id))) {
+    return { valid: false, code, discount: 0, message: "This code doesn't apply to the selected services." };
+  }
+  const usedTotal = db.redemptions.filter((r) => r.code === code).length;
+  if (promo.usage_limit != null && usedTotal >= promo.usage_limit) {
+    return { valid: false, code, discount: 0, message: "This code has reached its usage limit." };
+  }
+  const usedByCustomer = db.redemptions.filter(
+    (r) => r.code === code && r.customer_id === customerId,
+  ).length;
+  if (promo.per_customer_limit != null && usedByCustomer >= promo.per_customer_limit) {
+    return { valid: false, code, discount: 0, message: "You've already used this code." };
+  }
+
+  let discount =
+    promo.discount_type === "percentage"
+      ? (subtotal * promo.value) / 100
+      : promo.value;
+  if (promo.max_discount != null) discount = Math.min(discount, promo.max_discount);
+  discount = Math.min(discount, subtotal);
+  discount = Math.round(discount * 100) / 100;
+
+  return { valid: true, code, discount, message: null };
 }
 
 const g = globalThis as typeof globalThis & { __bubbleitMockDb?: MockDB };

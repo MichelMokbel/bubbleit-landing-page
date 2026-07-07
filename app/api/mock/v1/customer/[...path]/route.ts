@@ -12,6 +12,7 @@ import {
   SLOT_GRID,
   STATUS_LABELS,
   db,
+  evaluatePromo,
   makeReference,
 } from "@/lib/mock/store";
 
@@ -296,6 +297,19 @@ async function handle(req: NextRequest, segments: string[]) {
     return envelope(paginated(mine));
   }
 
+  if (method === "POST" && path === "promo-codes/validate") {
+    const subtotal = Number(body.subtotal ?? 0);
+    const serviceIds = Array.isArray(body.service_ids) ? body.service_ids.map(Number) : [];
+    const result = evaluatePromo(store, String(body.code ?? ""), customer.id, subtotal, serviceIds);
+    return envelope({
+      valid: result.valid,
+      code: result.code,
+      discount_amount: result.discount,
+      final_total: Math.max(0, subtotal - result.discount),
+      message: result.message,
+    });
+  }
+
   if (method === "POST" && path === "bookings") {
     const scheduledAt = String(body.scheduled_at ?? "");
 
@@ -379,22 +393,52 @@ async function handle(req: NextRequest, segments: string[]) {
       addressArea = `${address.area}${address.details ? ` — ${address.details}` : ""}`;
     }
 
+    const subtotal = bookingCars.reduce((sum, c) => sum + c.subtotal, 0);
+
+    // Re-validate the promo server-side (never trust a client-sent discount).
+    let discount = 0;
+    let appliedCode: string | null = null;
+    if (body.promo_code) {
+      const serviceIds = bookingCars.map((c) => c.service.id);
+      const result = evaluatePromo(store, String(body.promo_code), customer.id, subtotal, serviceIds);
+      if (!result.valid) {
+        return fail(422, result.message ?? "This promo code cannot be applied.", {
+          promo_code: [result.message ?? "Invalid promo code."],
+        });
+      }
+      discount = result.discount;
+      appliedCode = result.code;
+    }
+
     const id = store.nextId++;
+    const reference = makeReference(id);
     const booking: Booking & { customer_id: number } = {
       id,
       customer_id: customer.id,
-      reference: makeReference(id),
+      reference,
       status: "pending_payment",
       status_label: STATUS_LABELS.pending_payment,
       scheduled_at: scheduledAt,
       payment_method: paymentMethod,
-      total: bookingCars.reduce((sum, c) => sum + c.subtotal, 0),
+      total: Math.max(0, subtotal - discount),
       address_area: addressArea,
       notes: String(body.notes ?? "").trim(),
       cars: bookingCars,
       created_at: new Date().toISOString(),
     };
     store.bookings.push(booking);
+
+    // Record the redemption — this is the row the admin dashboard reads back.
+    if (appliedCode && discount > 0) {
+      store.redemptions.push({
+        id: store.nextId++,
+        code: appliedCode,
+        customer_id: customer.id,
+        booking_reference: reference,
+        discount_amount: discount,
+        redeemed_at: new Date().toISOString(),
+      });
+    }
 
     const { customer_id: _c, ...pub } = booking;
     return envelope(pub, { status: 201, message: "Booking created." });

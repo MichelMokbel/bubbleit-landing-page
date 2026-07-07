@@ -10,6 +10,7 @@ import type {
   Envelope,
   MembershipPlan,
   Paginated,
+  PromoValidation,
   Service,
   Vehicle,
   VerifyOtpResult,
@@ -187,6 +188,16 @@ export function buyMembership(planId: number) {
 }
 
 // ── Bookings ─────────────────────────────────────────────────────────────────
+
+// Validates a promo code against the current cart. Requires auth so the
+// backend can enforce per-customer usage limits. Same contract the admin app
+// uses; the customer namespace scopes it to the signed-in customer.
+export function validatePromo(code: string, subtotal: number, serviceIds: number[]) {
+  return request<PromoValidation>("/promo-codes/validate", {
+    method: "POST",
+    body: { code, subtotal, service_ids: serviceIds },
+  });
+}
 
 export function createBooking(payload: CreateBookingPayload) {
   return request<Booking>("/bookings", { method: "POST", body: payload });
