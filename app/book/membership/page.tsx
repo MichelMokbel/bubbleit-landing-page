@@ -64,6 +64,13 @@ function RedeemInner() {
 
   const isMidnight = membership?.plan.window_start != null;
 
+  // A membership only covers its plan's vehicle type (Salon or SUV; null = any).
+  // Non-matching existing vehicles are disabled in the list, so a selection can
+  // never be non-matching; the add-vehicle type is forced to the plan below.
+  const planVtype = membership?.plan.vehicle_type ?? null;
+  const vehicleAllowed = (type: string) => planVtype === null || type === planVtype;
+  const effectiveVtype = planVtype ?? vtype;
+
   const load = useCallback(() => {
     Promise.all([listMemberships(), listVehicles()])
       .then(([ms, vs]) => {
@@ -104,7 +111,7 @@ function RedeemInner() {
           year: null,
           color: "",
           plate_number: plate.trim(),
-          type: vtype,
+          type: effectiveVtype,
         });
         vid = vehicle.id;
       }
@@ -174,16 +181,21 @@ function RedeemInner() {
       <h2 className="mb-3 text-lg font-bold">{t("Pick your vehicle")}</h2>
       {vehicles.length > 0 && !addVehicle ? (
         <div className="flex flex-col gap-2">
-          {vehicles.map((v) => (
+          {vehicles.map((v) => {
+            const allowed = vehicleAllowed(v.type);
+            return (
             <button
               key={v.id}
               type="button"
+              disabled={!allowed}
               onClick={() => setVehicleId(v.id)}
               className={clsx(
                 "flex items-center justify-between rounded-2xl border px-4 py-3 text-start text-sm transition",
-                vehicleId === v.id
-                  ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white"
-                  : "border-[color:var(--border)] bg-white hover:border-[color:var(--blue)]",
+                !allowed
+                  ? "cursor-not-allowed border-[color:var(--border)] bg-[color:var(--background)] opacity-40"
+                  : vehicleId === v.id
+                    ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white"
+                    : "border-[color:var(--border)] bg-white hover:border-[color:var(--blue)]",
               )}
             >
               <span className="font-semibold">
@@ -191,9 +203,11 @@ function RedeemInner() {
               </span>
               <span className={clsx("text-xs", vehicleId === v.id ? "text-white/70" : "text-[color:var(--muted-foreground)]")}>
                 {v.type === "suv" ? t("SUV / 4-Wheel") : t("Salon / Sedan")}
+                {!allowed && ` · ${t("not covered")}`}
               </span>
             </button>
-          ))}
+            );
+          })}
           <button
             type="button"
             className="secondary-button mt-1 self-start"
@@ -207,14 +221,22 @@ function RedeemInner() {
           <input className="wizard-input" placeholder={t("Make")} value={make} onChange={(e) => setMake(e.target.value)} />
           <input className="wizard-input" placeholder={t("Model")} value={model} onChange={(e) => setModel(e.target.value)} />
           <input className="wizard-input" placeholder={t("Plate no.")} value={plate} onChange={(e) => setPlate(e.target.value)} />
-          <select
-            className="wizard-input"
-            value={vtype}
-            onChange={(e) => setVtype(e.target.value as "sedan" | "suv")}
-          >
-            <option value="sedan">{t("Salon / Sedan")}</option>
-            <option value="suv">{t("SUV / 4-Wheel")}</option>
-          </select>
+          {planVtype ? (
+            // Locked to the membership's vehicle type.
+            <div className="wizard-input flex items-center justify-between text-[color:var(--muted-foreground)]">
+              {planVtype === "suv" ? t("SUV / 4-Wheel") : t("Salon / Sedan")}
+              <span className="text-xs">🔒</span>
+            </div>
+          ) : (
+            <select
+              className="wizard-input"
+              value={vtype}
+              onChange={(e) => setVtype(e.target.value as "sedan" | "suv")}
+            >
+              <option value="sedan">{t("Salon / Sedan")}</option>
+              <option value="suv">{t("SUV / 4-Wheel")}</option>
+            </select>
+          )}
         </div>
       )}
 

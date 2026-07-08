@@ -145,6 +145,7 @@ const AR: Record<string, string> = {
   "Covered by membership": "مغطّى بالاشتراك",
   "covered by membership": "مغطّى بالاشتراك",
   "Washes left after booking": "الغسلات المتبقية بعد الحجز",
+  "not covered": "غير مشمول",
   "Area / neighborhood": "المنطقة / الحي",
   "e.g. West Bay, The Pearl…": "مثال: الخليج الغربي، اللؤلؤة…",
   "Building, street, parking details": "تفاصيل المبنى والشارع والمواقف",
