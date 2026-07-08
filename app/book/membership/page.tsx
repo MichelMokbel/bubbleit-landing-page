@@ -54,6 +54,8 @@ function RedeemInner() {
   const [date, setDate] = useState(days[0].date);
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
+  // Reference "now" captured when slots load, used to hide today's past slots.
+  const [nowMs, setNowMs] = useState(0);
   const [area, setArea] = useState("");
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
@@ -82,6 +84,7 @@ function RedeemInner() {
     queueMicrotask(() => {
       setSlots(null);
       setSlot(null);
+      setNowMs(Date.now());
     });
     getAvailability(date, isMidnight ? "midnight" : "standard")
       .then((a) => setSlots(a.slots))
@@ -238,24 +241,32 @@ function RedeemInner() {
         <p className="py-6 text-center text-sm text-[color:var(--muted-foreground)]">{t("Checking availability…")}</p>
       ) : (
         <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {slots.map((s) => (
-            <button
-              key={s.start}
-              type="button"
-              disabled={!s.available}
-              onClick={() => setSlot(s.start)}
-              className={clsx(
-                "rounded-xl border px-2 py-2.5 text-sm font-semibold transition",
-                slot === s.start
-                  ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white"
-                  : s.available
-                    ? "border-[color:var(--border)] bg-white hover:border-[color:var(--blue)]"
-                    : "cursor-not-allowed border-transparent bg-[color:var(--background)] text-[color:var(--muted-foreground)]/50 line-through",
-              )}
-            >
-              {s.start}
-            </button>
-          ))}
+          {slots.map((s) => {
+            // A slot on today's date whose start time has already passed must
+            // not be bookable, even if the backend still lists it (its "now"
+            // may be a different timezone).
+            const isPast =
+              new Date(`${date}T${s.start}:00`).getTime() <= nowMs;
+            const selectable = s.available && !isPast;
+            return (
+              <button
+                key={s.start}
+                type="button"
+                disabled={!selectable}
+                onClick={() => setSlot(s.start)}
+                className={clsx(
+                  "rounded-xl border px-2 py-2.5 text-sm font-semibold transition",
+                  slot === s.start
+                    ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white"
+                    : selectable
+                      ? "border-[color:var(--border)] bg-white hover:border-[color:var(--blue)]"
+                      : "cursor-not-allowed border-transparent bg-[color:var(--background)] text-[color:var(--muted-foreground)]/50 line-through",
+                )}
+              >
+                {s.start}
+              </button>
+            );
+          })}
         </div>
       )}
 
