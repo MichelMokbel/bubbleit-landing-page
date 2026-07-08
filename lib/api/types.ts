@@ -22,6 +22,7 @@ export type AddOn = {
   id: number;
   name: string;
   price: number;
+  duration_minutes?: number;
 };
 
 export type VehicleType =
@@ -41,6 +42,8 @@ export type Service = {
   description_ar: string;
   price: number; // salon price
   price_suv: number;
+  duration_minutes: number;
+  duration_label: string;
   category: string;
   add_ons: AddOn[];
 };
@@ -172,6 +175,20 @@ export type QuoteCar = {
 };
 
 export type BookingQuote = {
+  service: {
+    id: number;
+    name: string;
+    price: number;
+    duration_minutes: number;
+    duration_label: string;
+  } | null;
+  scheduled_start_at: string;
+  scheduled_end_at: string;
+  time_range_label: string;
+  duration_minutes: number;
+  duration_label: string;
+  base_price: number;
+  discount_total: number;
   service_total: number;
   membership_eligible: boolean;
   membership_discount: number;

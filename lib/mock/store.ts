@@ -51,26 +51,37 @@ export type MockDB = {
 };
 
 // Official Bubbleit pricelist — salon vs SUV pricing + extended catalog.
+export function formatDuration(min: number): string {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const r = min % 60;
+  if (r === 0) return h === 1 ? "1 hour" : `${h} hours`;
+  return `${h}h ${r}m`;
+}
+
 const svc = (
   id: number, name: string, name_ar: string, description: string, description_ar: string,
-  price: number, price_suv: number, category: string,
-): Service => ({ id, name, name_ar, description, description_ar, price, price_suv, category, add_ons: [] });
+  price: number, price_suv: number, category: string, duration: number,
+): Service => ({
+  id, name, name_ar, description, description_ar, price, price_suv, category,
+  duration_minutes: duration, duration_label: formatDuration(duration), add_ons: [],
+});
 
 export const SERVICES: Service[] = [
-  svc(1, "Standard Bubble", "ستاندرد بابل", "Exterior wash & interior cleaning.", "غسيل خارجي و تنظيف داخلي.", 60, 70, "wash"),
-  svc(2, "Steam Bubble", "ستيم بابل", "Exterior wash & interior cleaning with steam.", "غسيل خارجي و تنظيف داخلي بالبخار.", 120, 140, "wash"),
-  svc(3, "Deep Bubble", "ديب بابل", "Exterior wash, engine wash, under-chassis & interior steam cleaning.", "غسيل خارجي و غسيل المكينة و تحت الهيكل.", 180, 200, "wash"),
-  svc(4, "Interior Detailing", "بولش داخلي", "Full interior polish and deep detailing.", "بولش داخلي.", 450, 550, "detailing"),
-  svc(5, "Exterior Detailing", "بولش خارجي", "Full exterior polish and paint care.", "بولش خارجي.", 550, 650, "detailing"),
-  svc(6, "Bubbleit Detailing", "ببلت ديتيلنق", "The complete package — interior & exterior polish.", "بولش داخلي و خارجي.", 850, 1000, "detailing"),
+  svc(1, "Standard Bubble", "ستاندرد بابل", "Exterior wash & interior cleaning.", "غسيل خارجي و تنظيف داخلي.", 60, 70, "wash", 30),
+  svc(2, "Steam Bubble", "ستيم بابل", "Exterior wash & interior cleaning with steam.", "غسيل خارجي و تنظيف داخلي بالبخار.", 120, 140, "wash", 45),
+  svc(3, "Deep Bubble", "ديب بابل", "Exterior wash, engine wash, under-chassis & interior steam cleaning.", "غسيل خارجي و غسيل المكينة و تحت الهيكل.", 180, 200, "wash", 60),
+  svc(4, "Interior Detailing", "بولش داخلي", "Full interior polish and deep detailing.", "بولش داخلي.", 450, 550, "detailing", 180),
+  svc(5, "Exterior Detailing", "بولش خارجي", "Full exterior polish and paint care.", "بولش خارجي.", 550, 650, "detailing", 180),
+  svc(6, "Bubbleit Detailing", "ببلت ديتيلنق", "The complete package — interior & exterior polish.", "بولش داخلي و خارجي.", 850, 1000, "detailing", 240),
   ...[["6", 480], ["8", 640], ["10", 800], ["12", 960], ["14", 1200]].map(([m, p], i) =>
-    svc(10 + i, `Caravan Wash In & Out — ${m}m`, `غسيل الكرفان داخل و برع — ${m} متر`, "Full interior & exterior caravan wash.", "غسيل الكرفان داخل و برع.", p as number, p as number, "caravan")),
+    svc(10 + i, `Caravan Wash In & Out — ${m}m`, `غسيل الكرفان داخل و برع — ${m} متر`, "Full interior & exterior caravan wash.", "غسيل الكرفان داخل و برع.", p as number, p as number, "caravan", 180)),
   ...[["6", 300], ["8", 400], ["10", 500], ["12", 600], ["14", 700]].map(([m, p], i) =>
-    svc(20 + i, `Caravan Wash Single Side — ${m}m`, `الكرفان داخل فقط او برع فقط — ${m} متر`, "Interior only or exterior only.", "داخل فقط او برع فقط.", p as number, p as number, "caravan_single")),
-  ...[["Standard Jet", "ستاندر جيت", 100], ["Deep Jet", "ديب جيت", 200], ["Polish Jet", "بولش جيت", 500], ["Bubbleit Jet", "ببلت جيت", 650]].map(([n, a, p], i) =>
-    svc(30 + i, `${n} — Jet Ski`, `${a} — جت سكي`, "Jet ski wash service.", "غسيل جت سكي.", p as number, p as number, "jet_ski")),
-  ...[["Standard Jet", "ستاندرد جيت", 250], ["Deep Jet", "ديب جيت", 500], ["Polish Jet", "بولش جيت", 1200], ["Bubbleit Jet", "ببلت جيت", 1600]].map(([n, a, p], i) =>
-    svc(40 + i, `${n} — Jet Boat`, `${a} — جيت بوت`, "Jet boat wash service.", "غسيل جيت بوت.", p as number, p as number, "jet_boat")),
+    svc(20 + i, `Caravan Wash Single Side — ${m}m`, `الكرفان داخل فقط او برع فقط — ${m} متر`, "Interior only or exterior only.", "داخل فقط او برع فقط.", p as number, p as number, "caravan_single", 120)),
+  ...[["Standard Jet", "ستاندر جيت", 100, 30], ["Deep Jet", "ديب جيت", 200, 60], ["Polish Jet", "بولش جيت", 500, 85], ["Bubbleit Jet", "ببلت جيت", 650, 90]].map(([n, a, p, d], i) =>
+    svc(30 + i, `${n} — Jet Ski`, `${a} — جت سكي`, "Jet ski wash service.", "غسيل جت سكي.", p as number, p as number, "jet_ski", d as number)),
+  ...[["Standard Jet", "ستاندرد جيت", 250, 50], ["Deep Jet", "ديب جيت", 500, 145], ["Polish Jet", "بولش جيت", 1200, 200], ["Bubbleit Jet", "ببلت جيت", 1600, 270]].map(([n, a, p, d], i) =>
+    svc(40 + i, `${n} — Jet Boat`, `${a} — جيت بوت`, "Jet boat wash service.", "غسيل جيت بوت.", p as number, p as number, "jet_boat", d as number)),
 ];
 
 const plan = (

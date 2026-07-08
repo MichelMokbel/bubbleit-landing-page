@@ -669,6 +669,8 @@ export function BookingWizard() {
               dueTotal={dueTotal}
               paidByMembership={paidByMembership}
               washesLeftAfter={washesLeftAfter}
+              timeRangeLabel={quote?.time_range_label ?? null}
+              durationLabel={quote?.duration_label ?? null}
             />
           </StepPanel>
         )}
@@ -910,11 +912,21 @@ function StepServices({
                     </span>
                     <span
                       className={clsx(
-                        "mt-2 text-sm font-bold",
+                        "mt-2 flex items-center gap-2 text-sm font-bold",
                         car.serviceId === service.id ? "text-[color:var(--cyan)]" : "text-[color:var(--blue)]",
                       )}
                     >
                       {fmt(priceFor(service, car.vtype))}
+                      {service.duration_label && (
+                        <span
+                          className={clsx(
+                            "font-medium",
+                            car.serviceId === service.id ? "text-white/70" : "text-[color:var(--muted-foreground)]",
+                          )}
+                        >
+                          · {service.duration_label}
+                        </span>
+                      )}
                     </span>
                   </button>
                   );
@@ -1049,6 +1061,8 @@ function Summary({
   dueTotal,
   paidByMembership,
   washesLeftAfter,
+  timeRangeLabel,
+  durationLabel,
 }: {
   cars: CarDraft[];
   services: Service[];
@@ -1065,6 +1079,8 @@ function Summary({
   dueTotal: number;
   paidByMembership: boolean;
   washesLeftAfter?: number;
+  timeRangeLabel: string | null;
+  durationLabel: string | null;
 }) {
   const { lang, t } = useI18n();
   const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString(lang === "ar" ? "ar" : "en", {
@@ -1113,8 +1129,12 @@ function Summary({
         </li>
         <li className="flex justify-between">
           <span className="text-[color:var(--muted-foreground)]">{t("When")}</span>
-          <span className="font-medium">
-            {dateLabel} · {slot}
+          <span className="text-right font-medium">
+            {dateLabel}
+            <span className="block text-xs text-[color:var(--muted-foreground)]">
+              {timeRangeLabel ?? slot}
+              {durationLabel && ` · ${durationLabel}`}
+            </span>
           </span>
         </li>
         <li className="flex justify-between">

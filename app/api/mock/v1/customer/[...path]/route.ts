@@ -13,6 +13,7 @@ import {
   STATUS_LABELS,
   db,
   evaluatePromo,
+  formatDuration,
   makeReference,
 } from "@/lib/mock/store";
 
@@ -378,11 +379,15 @@ async function handle(req: NextRequest, segments: string[]) {
 
     let serviceTotal = 0;
     let membershipDiscount = 0;
+    let totalDuration = 0;
+    let firstService: (typeof SERVICES)[number] | undefined;
     const summary = new Map<number, { m: MockMembership; applied: number }>();
     const carsOut = norm.map((c: { service_id: number; type: string }, i: number) => {
       const service = SERVICES.find((s) => s.id === c.service_id);
+      firstService ??= service;
       const base = service ? (c.type === "suv" ? service.price_suv : service.price) : 0;
       serviceTotal += base;
+      totalDuration += service?.duration_minutes ?? 0;
       const m = alloc[i];
       if (m) {
         membershipDiscount += base;
@@ -394,7 +399,26 @@ async function handle(req: NextRequest, segments: string[]) {
     });
 
     const total = Math.max(0, serviceTotal - membershipDiscount);
+    // Nominal wall-clock start (as sent) + duration → end and range label.
+    const startHm = scheduledAt.slice(11, 16);
+    const endDate = new Date(scheduledAt);
+    endDate.setMinutes(endDate.getMinutes() + totalDuration);
+    const endHm = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
     return envelope({
+      service: firstService && norm.length === 1 ? {
+        id: firstService.id,
+        name: firstService.name,
+        price: serviceTotal,
+        duration_minutes: totalDuration,
+        duration_label: formatDuration(totalDuration),
+      } : null,
+      scheduled_start_at: scheduledAt,
+      scheduled_end_at: endDate.toISOString(),
+      time_range_label: `${startHm}–${endHm}`,
+      duration_minutes: totalDuration,
+      duration_label: formatDuration(totalDuration),
+      base_price: serviceTotal,
+      discount_total: membershipDiscount,
       service_total: serviceTotal,
       membership_eligible: membershipDiscount > 0,
       membership_discount: membershipDiscount,
