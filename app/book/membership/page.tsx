@@ -20,19 +20,14 @@ import {
   listVehicles,
 } from "@/lib/api/client";
 import type { Booking, CustomerMembership, Slot, Vehicle } from "@/lib/api/types";
+import { nextQatarDays, qatarSlotMs } from "@/lib/datetime";
 import { localized, useI18n } from "@/lib/i18n";
 
 function next7Days() {
-  const days = [];
-  const now = new Date();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-    days.push({
-      date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-      label: d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }),
-    });
-  }
-  return days;
+  return nextQatarDays(7).map((d) => ({
+    date: d.date,
+    label: `${d.weekday}, ${d.monthDay}`,
+  }));
 }
 
 function RedeemInner() {
@@ -262,11 +257,10 @@ function RedeemInner() {
       ) : (
         <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {slots.map((s) => {
-            // A slot on today's date whose start time has already passed must
-            // not be bookable, even if the backend still lists it (its "now"
-            // may be a different timezone).
-            const isPast =
-              new Date(`${date}T${s.start}:00`).getTime() <= nowMs;
+            // A slot on today's date whose start time has already passed
+            // (in Qatar) must not be bookable, even if the backend still
+            // lists it.
+            const isPast = qatarSlotMs(date, s.start) <= nowMs;
             const selectable = s.available && !isPast;
             return (
               <button

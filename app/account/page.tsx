@@ -16,6 +16,7 @@ import {
   me,
 } from "@/lib/api/client";
 import type { Booking, BookingStatus, Customer } from "@/lib/api/types";
+import { formatQatarDateTime } from "@/lib/datetime";
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   pending_payment: "bg-amber-100 text-amber-700",
@@ -149,7 +150,7 @@ function BookingCard({
   booking: Booking;
   onCancel: () => void;
 }) {
-  const when = new Date(booking.scheduled_at).toLocaleString("en", {
+  const when = formatQatarDateTime(booking.scheduled_at, "en", {
     weekday: "short",
     month: "short",
     day: "numeric",

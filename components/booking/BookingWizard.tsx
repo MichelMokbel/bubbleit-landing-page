@@ -34,6 +34,11 @@ import type {
   Slot,
   VehicleType,
 } from "@/lib/api/types";
+import {
+  formatQatarDateTime,
+  nextQatarDays,
+  qatarSlotMs,
+} from "@/lib/datetime";
 import { localized, useI18n } from "@/lib/i18n";
 
 const CURRENCY = "QR";
@@ -149,23 +154,7 @@ function fmt(amount: number) {
 }
 
 function next7Days(): { date: string; label: string; weekday: string }[] {
-  const days = [];
-  const now = new Date();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    days.push({
-      date: iso,
-      label:
-        i === 0
-          ? "Today"
-          : i === 1
-            ? "Tomorrow"
-            : d.toLocaleDateString("en", { month: "short", day: "numeric" }),
-      weekday: d.toLocaleDateString("en", { weekday: "short" }),
-    });
-  }
-  return days;
+  return nextQatarDays(7);
 }
 
 export function BookingWizard() {
@@ -674,9 +663,9 @@ export function BookingWizard() {
                 <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {slots.map((s) => {
                     // A slot on today's date whose start time has already passed
-                    // must not be bookable, even if the backend still lists it.
-                    const isPast =
-                      new Date(`${date}T${s.start}:00`).getTime() <= nowMs;
+                    // (in Qatar) must not be bookable, even if the backend
+                    // still lists it.
+                    const isPast = qatarSlotMs(date, s.start) <= nowMs;
                     const selectable = s.available && !isPast;
                     return (
                       <button
@@ -1492,7 +1481,8 @@ function PromoField({
 
 function SuccessPanel({ booking }: { booking: Booking }) {
   const { lang, t } = useI18n();
-  const when = new Date(booking.scheduled_at).toLocaleString(
+  const when = formatQatarDateTime(
+    booking.scheduled_at,
     lang === "ar" ? "ar" : "en",
     {
       weekday: "long",
