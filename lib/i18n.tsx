@@ -209,10 +209,20 @@ const AR: Record<string, string> = {
   "Please refresh the page or try again shortly.": "يرجى تحديث الصفحة أو المحاولة لاحقاً.",
   "That slot was just taken. Please pick another time.":
     "تم حجز هذا الموعد للتو. يرجى اختيار وقت آخر.",
+  "One of your cars already has a booking at this time. Pick a different time for it.":
+    "إحدى سياراتك لديها حجز بالفعل في هذا الوقت. يرجى اختيار وقت آخر لها.",
   "Something went wrong. Please try again.": "حدث خطأ ما. يرجى المحاولة مجدداً.",
 
   // Account
   "My Account": "حسابي",
+  "Bookings": "الحجوزات",
+  "My Cars": "سياراتي",
+  "Loading your cars…": "جارٍ تحميل سياراتك…",
+  "No cars saved yet": "لا توجد سيارات محفوظة بعد",
+  "Cars you add during a booking are saved here by plate number.":
+    "السيارات التي تضيفها أثناء الحجز تُحفظ هنا برقم اللوحة.",
+  "Remove this car?": "إزالة هذه السيارة؟",
+  "Your saved cars": "سياراتك المحفوظة",
   "Sign in with your phone": "سجّل الدخول برقم هاتفك",
   "We'll text you a 6-digit code — no passwords needed.":
     "سنرسل لك رمزاً من 6 أرقام — لا حاجة لكلمة مرور.",

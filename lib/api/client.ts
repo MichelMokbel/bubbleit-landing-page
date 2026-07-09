@@ -177,6 +177,10 @@ export function createVehicle(payload: Omit<Vehicle, "id">) {
   return request<Vehicle>("/vehicles", { method: "POST", body: payload });
 }
 
+export function deleteVehicle(id: number) {
+  return request<null>(`/vehicles/${id}`, { method: "DELETE" });
+}
+
 export function createAddress(payload: Omit<Address, "id"> | Omit<Address, "id" | "latitude" | "longitude">) {
   return request<Address>("/addresses", { method: "POST", body: payload });
 }

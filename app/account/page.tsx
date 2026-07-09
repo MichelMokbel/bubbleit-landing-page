@@ -10,12 +10,20 @@ import { useI18n } from "@/lib/i18n";
 import {
   ApiError,
   cancelBooking,
+  deleteVehicle,
   getToken,
   listBookings,
+  listVehicles,
   logout,
   me,
 } from "@/lib/api/client";
-import type { Booking, BookingStatus, Customer } from "@/lib/api/types";
+import type {
+  Booking,
+  BookingStatus,
+  Customer,
+  Vehicle,
+  VehicleType,
+} from "@/lib/api/types";
 import { formatQatarDateTime } from "@/lib/datetime";
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
@@ -31,15 +39,26 @@ const STATUS_STYLES: Record<BookingStatus, string> = {
 
 const CANCELLABLE: BookingStatus[] = ["pending_payment", "paid", "assigned"];
 
+const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
+  sedan: "Salon / Sedan",
+  suv: "SUV / 4-Wheel",
+  caravan: "Caravan",
+  jet_ski: "Jet Ski",
+  jet_boat: "Jet Boat",
+};
+
 export default function AccountPage() {
   const { t } = useI18n();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [checked, setChecked] = useState(false);
   const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
+  const [tab, setTab] = useState<"bookings" | "cars">("bookings");
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     listBookings().then(setBookings).catch(() => setBookings([]));
+    listVehicles().then(setVehicles).catch(() => setVehicles([]));
   }, []);
 
   useEffect(() => {
@@ -64,10 +83,22 @@ export default function AccountPage() {
     }
   }
 
+  async function handleRemoveVehicle(id: number) {
+    if (!window.confirm(t("Remove this car?"))) return;
+    setError(null);
+    try {
+      await deleteVehicle(id);
+      refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not remove the car.");
+    }
+  }
+
   async function handleLogout() {
     await logout();
     setCustomer(null);
     setBookings(null);
+    setVehicles(null);
   }
 
   return (
@@ -112,7 +143,70 @@ export default function AccountPage() {
               </p>
             )}
 
-            {bookings === null ? (
+            <div className="mb-6 flex gap-2">
+              {(
+                [
+                  ["bookings", t("Bookings")],
+                  ["cars", t("My Cars")],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTab(value)}
+                  className={
+                    tab === value
+                      ? "rounded-full bg-[color:var(--navy)] px-5 py-2 text-sm font-semibold text-white"
+                      : "rounded-full border border-[color:var(--border)] bg-white px-5 py-2 text-sm font-semibold text-[color:var(--foreground)] hover:border-[color:var(--blue)]"
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "cars" ? (
+              vehicles === null ? (
+                <p className="py-16 text-center text-sm text-[color:var(--muted-foreground)]">{t("Loading your cars…")}</p>
+              ) : vehicles.length === 0 ? (
+                <div className="glass-panel rounded-[var(--radius-card)] p-12 text-center">
+                  <h2 className="text-xl font-bold">{t("No cars saved yet")}</h2>
+                  <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
+                    {t("Cars you add during a booking are saved here by plate number.")}
+                  </p>
+                  <Link href="/book" className="primary-button mt-6">
+                    {t("Book a Wash")}
+                  </Link>
+                </div>
+              ) : (
+                <div className="card-grid md:grid-cols-2 lg:grid-cols-3">
+                  {vehicles.map((v) => (
+                    <article key={v.id} className="glass-panel flex flex-col gap-3 rounded-[var(--radius-card)] p-6">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-2xl font-extrabold tracking-wider text-[color:var(--navy)]">
+                          {v.plate_number}
+                        </span>
+                        <span className="rounded-full bg-[color:var(--background)] px-3 py-1 text-xs font-semibold">
+                          {t(VEHICLE_TYPE_LABELS[v.type])}
+                        </span>
+                      </div>
+                      {(v.make || v.model || v.color) && (
+                        <p className="text-sm text-[color:var(--muted-foreground)]">
+                          {[v.make, v.model, v.color].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        className="self-start text-sm font-semibold text-red-600 hover:underline"
+                        onClick={() => handleRemoveVehicle(v.id)}
+                      >
+                        {t("Remove")}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )
+            ) : bookings === null ? (
               <p className="py-16 text-center text-sm text-[color:var(--muted-foreground)]">{t("Loading your bookings…")}</p>
             ) : bookings.length === 0 ? (
               <div className="glass-panel rounded-[var(--radius-card)] p-12 text-center">

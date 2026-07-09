@@ -213,7 +213,14 @@ function RedeemInner() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          <input className="wizard-input" placeholder={t("ID / Registration")} value={plate} onChange={(e) => setPlate(e.target.value)} />
+          <input
+            className="wizard-input"
+            placeholder="123456"
+            inputMode="numeric"
+            maxLength={6}
+            value={plate}
+            onChange={(e) => setPlate(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          />
           {planVtype ? (
             // Locked to the membership's vehicle type.
             <div className="wizard-input flex items-center justify-between text-[color:var(--muted-foreground)]">

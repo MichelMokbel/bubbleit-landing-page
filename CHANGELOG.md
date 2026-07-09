@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-07-09] — Saved cars: chips in booking, My Cars tab, 6-digit plates
+
+### Added
+- **Saved-car chips in the booking wizard** — logged-in customers see their saved cars (filtered to the card's vehicle kind) as selectable chips above the plate field; tapping one fills the plate, type, make, model, and color, so repeat bookings need no typing.
+- **My Cars tab on `/account`** — the account page now has Bookings / My Cars tabs; the cars tab lists each saved car by plate (with make/model/color and type badge) and allows removal (cars attached to an active booking are protected by the backend). New EN/AR strings.
+- **`deleteVehicle()`** in the API client.
+
+### Changed
+- **Plate inputs accept at most 6 digits** — the wizard's car plate field and the membership add-vehicle field are numeric-only, max 6 (Qatar plates); jet ski / caravan registration fields keep free text.
+
+### Notes
+- Backend companion (bubbleit-backend): `POST /customer/vehicles` now returns the existing vehicle when the same plate is re-submitted (plates are the car's identity), so wizard-created vehicles no longer duplicate per booking.
+
+## [2026-07-09] — Booking 409s show the real reason
+
+### Fixed
+- **Duplicate-booking rejection masqueraded as "no buses available"** — the booking wizard replaced every 409 from booking creation with "That slot was just taken." The backend guard is now vehicle-keyed (same customer CAN book a second car at the same time; the same car cannot be double-booked), and the wizard shows a dedicated message for that case ("One of your cars already has a booking at this time…", EN/AR) while keeping the slot-taken message for genuine capacity 409s.
+
 ## [2026-07-08] — Booking times always shown in Qatar time
 
 ### Added

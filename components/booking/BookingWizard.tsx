@@ -21,6 +21,7 @@ import {
   createBooking,
   createVehicle,
   getAvailability,
+  listVehicles,
   getQuote,
   getServices,
   getToken,
@@ -32,6 +33,7 @@ import type {
   BookingQuote,
   Service,
   Slot,
+  Vehicle,
   VehicleType,
 } from "@/lib/api/types";
 import {
@@ -81,6 +83,18 @@ const emptyCar = (key: number, kind: WashKind = "car"): CarDraft => ({
   color: "",
   plate: "",
 });
+
+// Saved-vehicle types that can be picked on a card of this kind.
+function typesForKind(kind: WashKind): VehicleType[] {
+  switch (kind) {
+    case "car":
+      return ["sedan", "suv"];
+    case "caravan":
+      return ["caravan"];
+    case "jet":
+      return ["jet_ski", "jet_boat"];
+  }
+}
 
 function priceFor(service: Service, vtype: VehicleType) {
   return vtype === "suv" ? service.price_suv : service.price;
@@ -206,6 +220,21 @@ export function BookingWizard() {
         .catch(() => setAuthed(false));
     }
   }, []);
+
+  // Saved cars power the plate chips; refresh whenever auth flips on.
+  const [myVehicles, setMyVehicles] = useState<Vehicle[]>([]);
+  useEffect(() => {
+    if (!authed) return;
+    let cancelled = false;
+    listVehicles()
+      .then((vs) => {
+        if (!cancelled) setMyVehicles(vs);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authed]);
 
   // Reference "now" captured when slots load, used to hide today's past slots.
   const [nowMs, setNowMs] = useState(0);
@@ -472,7 +501,15 @@ export function BookingWizard() {
       setConfirmed(booking);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        setError(t("That slot was just taken. Please pick another time."));
+        // The backend sends distinct 409 reasons — a car that is already
+        // booked must not be presented as a fleet-capacity problem.
+        setError(
+          e.message.includes("already has a booking")
+            ? t(
+                "One of your cars already has a booking at this time. Pick a different time for it.",
+              )
+            : t("That slot was just taken. Please pick another time."),
+        );
         setStep(2);
         loadSlots(date);
       } else {
@@ -546,6 +583,7 @@ export function BookingWizard() {
           <StepServices
             services={services}
             cars={cars}
+            savedVehicles={myVehicles}
             onUpdate={updateCar}
             onAdd={() =>
               setCars((prev) => [
@@ -916,12 +954,14 @@ function Field({
 function StepServices({
   services,
   cars,
+  savedVehicles,
   onUpdate,
   onAdd,
   onRemove,
 }: {
   services: Service[];
   cars: CarDraft[];
+  savedVehicles: Vehicle[];
   onUpdate: (key: number, patch: Partial<CarDraft>) => void;
   onAdd: () => void;
   onRemove: (key: number) => void;
@@ -1122,6 +1162,49 @@ function StepServices({
               )}
 
               <div className="mt-4">
+                {(() => {
+                  const saved = savedVehicles.filter((v) =>
+                    typesForKind(car.kind).includes(v.type),
+                  );
+                  if (saved.length === 0) return null;
+                  return (
+                    <div className="mb-3">
+                      <p className="mb-2 text-sm font-semibold">
+                        {t("Your saved cars")}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {saved.map((v) => {
+                          const active = car.plate === v.plate_number;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() =>
+                                onUpdate(car.key, {
+                                  plate: v.plate_number,
+                                  vtype: v.type,
+                                  make: v.make ?? "",
+                                  model: v.model ?? "",
+                                  color: v.color ?? "",
+                                })
+                              }
+                              className={clsx(
+                                "rounded-full border px-4 py-2 text-xs font-semibold transition",
+                                active
+                                  ? "border-[color:var(--blue)] bg-[color:var(--blue)] text-white"
+                                  : "border-[color:var(--border)] bg-white text-[color:var(--foreground)] hover:border-[color:var(--blue)]",
+                              )}
+                            >
+                              {v.plate_number}
+                              {(v.make || v.model) &&
+                                ` · ${[v.make, v.model].filter(Boolean).join(" ")}`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <Field
                   label={isCar ? t("Plate no.") : t("ID / Registration")}
                   required
@@ -1129,9 +1212,16 @@ function StepServices({
                   <input
                     className="wizard-input"
                     placeholder="123456"
+                    inputMode={isCar ? "numeric" : undefined}
+                    maxLength={isCar ? 6 : undefined}
                     value={car.plate}
                     onChange={(e) =>
-                      onUpdate(car.key, { plate: e.target.value })
+                      onUpdate(car.key, {
+                        // Qatar plates: digits only, at most 6.
+                        plate: isCar
+                          ? e.target.value.replace(/\D/g, "").slice(0, 6)
+                          : e.target.value,
+                      })
                     }
                   />
                 </Field>
