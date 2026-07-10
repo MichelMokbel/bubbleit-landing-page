@@ -5,6 +5,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AuthPanel } from "@/components/booking/AuthPanel";
+import { HourSlotPicker } from "@/components/booking/HourSlotPicker";
 
 // Leaflet touches `window` at import time, so load the map client-side only.
 const LocationMap = dynamic(() => import("@/components/booking/LocationMap"), {
@@ -39,7 +40,6 @@ import type {
 import {
   formatQatarDateTime,
   nextQatarDays,
-  qatarSlotMs,
   serializeQatarBookingDateTime,
 } from "@/lib/datetime";
 import { localized, useI18n } from "@/lib/i18n";
@@ -750,33 +750,13 @@ export function BookingWizard() {
               </p>
             ) : (
               <>
-                <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {slots.map((s) => {
-                    // A slot on today's date whose start time has already passed
-                    // (in Qatar) must not be bookable, even if the backend
-                    // still lists it.
-                    const isPast = qatarSlotMs(date, s.start) <= nowMs;
-                    const selectable = s.available && !isPast;
-                    return (
-                      <button
-                        key={s.start}
-                        type="button"
-                        disabled={!selectable}
-                        onClick={() => setSlot(s.start)}
-                        className={clsx(
-                          "rounded-xl border px-2 py-2.5 text-sm font-semibold transition",
-                          slot === s.start
-                            ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white"
-                            : selectable
-                              ? "border-[color:var(--border)] bg-white text-[color:var(--foreground)] hover:border-[color:var(--blue)] hover:text-[color:var(--blue)]"
-                              : "cursor-not-allowed border-transparent bg-[color:var(--background)] text-[color:var(--muted-foreground)]/50 line-through",
-                        )}
-                      >
-                        {s.start}
-                      </button>
-                    );
-                  })}
-                </div>
+                <HourSlotPicker
+                  date={date}
+                  slots={slots}
+                  selectedSlot={slot}
+                  nowMs={nowMs}
+                  onSelect={setSlot}
+                />
                 {selectedSlotMeta &&
                   typeof selectedSlotMeta.available_bus_count === "number" && (
                     <div className="mt-4 rounded-2xl border border-[color:var(--border)] bg-white/70 px-4 py-3 text-sm text-[color:var(--muted-foreground)]">
