@@ -14,6 +14,9 @@ Repository notes for agents working on the Bubble It marketing site and customer
 
 - The customer booking experience stays **time-first**.
 - Customers do **not** select a bus.
+- Availability slots are quarter-hour starts grouped into hour pills. Each hour pill opens the connected `HourSlotPicker` popover for `:00`, `:15`, `:30`, and `:45`; keep disabled/past choices visible but unselectable.
+- The backend keeps fleet capacity occupied for the configured post-booking buffer after `scheduled_end_at`. The website should continue to display the actual service end only.
+- The local mock API must mirror production slot generation and buffer-aware conflict behavior so booking demos cannot overbook a bus/driver pair.
 - If the backend returns dispatch-aware slot metadata, the UI may show lightweight operational feedback only:
   - available bus count for the selected time
   - a note that final bus assignment is confirmed by the Bubble It team

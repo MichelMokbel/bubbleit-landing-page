@@ -2,6 +2,15 @@
 
 ---
 
+## [2026-07-10] — Quarter-hour booking picker and fleet buffer
+
+### Added
+- **Connected hour picker** — customer and membership booking flows group availability by hour and open an anchored picker for `:00`, `:15`, `:30`, and `:45` starts.
+
+### Changed
+- **Buffer-aware slots** — availability now keeps the fleet unavailable for the configured post-booking buffer while continuing to show customers the actual service end time.
+- **Agent notes** — `CLAUDE.md` now documents the quarter-hour picker and the requirement for the local mock API to mirror production buffer conflicts.
+
 ## [2026-07-10] — Booking reliability
 
 ### Fixed
