@@ -13,6 +13,12 @@ type HourSlotPickerProps = {
   onSelect: (start: string) => void;
 };
 
+type QuarterOption = Slot & {
+  isApiSlot: boolean;
+};
+
+const QUARTER_MINUTES = ["00", "15", "30", "45"] as const;
+
 /** Groups quarter-hour API slots into an anchored hour → minute picker. */
 export function HourSlotPicker({
   date,
@@ -24,12 +30,33 @@ export function HourSlotPicker({
   const [openHour, setOpenHour] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const hours = useMemo(() => {
-    const grouped = new Map<string, Slot[]>();
+    const grouped = new Map<string, Map<string, Slot>>();
     slots.forEach((slot) => {
       const hour = slot.start.slice(0, 2);
-      grouped.set(hour, [...(grouped.get(hour) ?? []), slot]);
+      const minute = slot.start.slice(3, 5);
+      const options = grouped.get(hour) ?? new Map<string, Slot>();
+      options.set(minute, slot);
+      grouped.set(hour, options);
     });
-    return [...grouped.entries()];
+
+    return [...grouped.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([hour, options]) => {
+        const quarterOptions = QUARTER_MINUTES.map<QuarterOption>((minute) => {
+          const apiSlot = options.get(minute);
+
+          return apiSlot
+            ? { ...apiSlot, isApiSlot: true }
+            : {
+                start: `${hour}:${minute}`,
+                end: `${hour}:${minute}`,
+                available: false,
+                isApiSlot: false,
+              };
+        });
+
+        return [hour, quarterOptions] as const;
+      });
   }, [slots]);
 
   useEffect(() => {
@@ -81,7 +108,7 @@ export function HourSlotPicker({
                 className="absolute z-20 mt-2 grid w-[13rem] grid-cols-2 gap-1 rounded-2xl border border-[color:var(--border)] bg-white p-2 shadow-xl"
               >
                 {options.map((option) => {
-                  const optionEnabled = option.available && qatarSlotMs(date, option.start) > nowMs;
+                  const optionEnabled = option.isApiSlot && option.available && qatarSlotMs(date, option.start) > nowMs;
                   return (
                     <button
                       key={option.start}

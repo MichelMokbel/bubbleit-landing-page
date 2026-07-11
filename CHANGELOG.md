@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-07-11] — Quarter-hour picker fallback
+
+### Fixed
+- **Hour popover always shows all quarter choices** — each opened hour now renders `:00`, `:15`, `:30`, and `:45` even if an API response omits some quarter rows; missing or unavailable choices remain disabled.
+
 ## [2026-07-10] — Quarter-hour booking picker and fleet buffer
 
 ### Added
