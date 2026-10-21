@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-10-16] Customer wallet schema foundation
+
+- Mirror additive backend wallet summary, activity and refund destination definitions. No wallet checkout, BFF or membership wash behavior change in this stage.
+
 ## [2026-10-03] Dependency security refresh
 
 ### Security

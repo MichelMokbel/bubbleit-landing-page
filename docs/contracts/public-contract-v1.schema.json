@@ -27,6 +27,103 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "RefundSettlementDestination": {
+      "type": "string",
+      "enum": [
+        "original_payment",
+        "customer_wallet"
+      ]
+    },
+    "CustomerWalletSummary": {
+      "type": "object",
+      "required": [
+        "currency",
+        "balance_minor",
+        "reserved_minor",
+        "available_minor",
+        "as_of",
+        "capabilities"
+      ],
+      "properties": {
+        "currency": {
+          "const": "QAR"
+        },
+        "balance_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reserved_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "available_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "capabilities": {
+          "type": "object",
+          "required": [
+            "can_spend"
+          ],
+          "properties": {
+            "can_spend": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "CustomerWalletMovement": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "direction",
+        "amount_minor",
+        "currency",
+        "occurred_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "refund_credit",
+            "purchase_payment",
+            "correction_reversal"
+          ]
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "credit",
+            "debit"
+          ]
+        },
+        "amount_minor": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "currency": {
+          "const": "QAR"
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+,
     "BookingStatus": {
       "type": "string",
       "enum": [
