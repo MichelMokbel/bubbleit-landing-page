@@ -27,6 +27,198 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "CustomerWalletDirectoryEntry": {
+      "type": "object",
+      "required": [
+        "customer",
+        "currency",
+        "balance_minor",
+        "reserved_minor",
+        "available_minor",
+        "as_of"
+      ],
+      "properties": {
+        "customer": {
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "phone",
+            "archived"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "archived": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "currency": {
+          "const": "QAR"
+        },
+        "balance_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reserved_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "available_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CustomerWalletReservation": {
+      "type": "object",
+      "required": [
+        "id",
+        "amount_minor",
+        "currency",
+        "expires_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "amount_minor": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "currency": {
+          "const": "QAR"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CustomerRefund": {
+      "type": "object",
+      "required": [
+        "id",
+        "reference",
+        "status",
+        "currency",
+        "amount_minor",
+        "settled_amount_minor",
+        "pending_amount_minor",
+        "reason",
+        "booking_id",
+        "subject_type",
+        "subject_reference",
+        "settlement_destination",
+        "can_choose_destination",
+        "wallet_credit_available",
+        "wallet_consent_at",
+        "created_at",
+        "processed_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reference": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "submitted",
+            "under_review",
+            "approved",
+            "processing",
+            "retryable",
+            "quarantined",
+            "rejected",
+            "processed"
+          ]
+        },
+        "currency": {
+          "const": "QAR"
+        },
+        "amount_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "settled_amount_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending_amount_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reason": {
+          "type": "string"
+        },
+        "booking_id": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "subject_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "subject_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "settlement_destination": {
+          "$ref": "#/$defs/RefundSettlementDestination"
+        },
+        "can_choose_destination": {
+          "type": "boolean"
+        },
+        "wallet_credit_available": {
+          "type": "boolean"
+        },
+        "wallet_consent_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "processed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
     "RefundSettlementDestination": {
       "type": "string",
       "enum": [

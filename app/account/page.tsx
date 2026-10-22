@@ -8,6 +8,8 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { AuthPanel } from "@/components/booking/AuthPanel";
 import { HourSlotPicker } from "@/components/booking/HourSlotPicker";
+import { CustomerWallet } from "@/components/account/CustomerWallet";
+import { BookingRefundRequest } from "@/components/account/BookingRefundRequest";
 import { CustomerNotifications } from "@/components/account/CustomerNotifications";
 import { LoyaltyModal } from "@/components/loyalty/LoyaltyModal";
 import { useI18n } from "@/lib/i18n";
@@ -68,7 +70,7 @@ const STATUS_STYLES: Record<BookingStatus, string> = {
 };
 
 const CANCELLABLE: BookingStatus[] = ["pending_payment", "paid", "assigned"];
-const ACCOUNT_TABS = ["overview", "rewards", "bookings", "orders", "memberships", "vehicles", "notifications"] as const;
+const ACCOUNT_TABS = ["overview", "wallet", "rewards", "bookings", "orders", "memberships", "vehicles", "notifications"] as const;
 
 type BookingFilter = "all" | "upcoming" | "in_progress" | "completed" | "cancelled";
 
@@ -386,7 +388,7 @@ export default function AccountPage() {
     try {
       const cancelled = await cancelBooking(id);
       setBookings((current) => current?.map((item) => item.id === cancelled.id ? cancelled : item) ?? [cancelled]);
-      setPaymentNotice({ tone: "warning", message: t("Booking cancelled. You were not charged.") });
+      setPaymentNotice({ tone: "warning", message: t(cancelled.refund ? "Booking cancelled. Your refund request is awaiting review." : "Booking cancelled. You were not charged.") });
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : t("Could not cancel the booking."));
     } finally {
@@ -676,7 +678,7 @@ export default function AccountPage() {
             </section>
 
             <div className="mt-7 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1 sm:grid-cols-4 lg:grid-cols-7" role="tablist" aria-label={t("Account sections")}>
-              {([["overview", t("Overview")], ["rewards", t("Rewards")], ["bookings", t("Bookings")], ["orders", t("Orders")], ["memberships", t("Memberships")], ["vehicles", t("Vehicles")], ["notifications", t("Notifications")]] as const).map(([value, label]) => <button key={value} id={`account-tab-${value}`} type="button" role="tab" tabIndex={tab === value ? 0 : -1} aria-selected={tab === value} aria-controls={`account-panel-${value}`} onKeyDown={(event) => handleTabKeyDown(event, value)} onClick={() => setTab(value)} className={clsx("min-h-11 rounded-xl px-3 text-sm font-semibold transition", tab === value ? "bg-[color:var(--navy)] text-white" : "text-[color:var(--muted-foreground)] hover:bg-slate-50 hover:text-[color:var(--navy)]")}>{label}</button>)}
+              {([["overview", t("Overview")], ["wallet", t("Wallet")], ["rewards", t("Rewards")], ["bookings", t("Bookings")], ["orders", t("Orders")], ["memberships", t("Memberships")], ["vehicles", t("Vehicles")], ["notifications", t("Notifications")]] as const).map(([value, label]) => <button key={value} id={`account-tab-${value}`} type="button" role="tab" tabIndex={tab === value ? 0 : -1} aria-selected={tab === value} aria-controls={`account-panel-${value}`} onKeyDown={(event) => handleTabKeyDown(event, value)} onClick={() => setTab(value)} className={clsx("min-h-11 rounded-xl px-3 text-sm font-semibold transition", tab === value ? "bg-[color:var(--navy)] text-white" : "text-[color:var(--muted-foreground)] hover:bg-slate-50 hover:text-[color:var(--navy)]")}>{label}</button>)}
             </div>
 
             <div key={tab} id={`account-panel-${tab}`} role="tabpanel" aria-labelledby={`account-tab-${tab}`} tabIndex={0} className="checkout-step mt-6 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--blue)] focus-visible:ring-offset-4">
@@ -686,6 +688,7 @@ export default function AccountPage() {
                 <section className="lg:col-span-2"><div className="mb-3 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-[color:var(--blue)]">{t("Loyalty")}</p><h2 className="mt-1 text-xl font-bold">{t("Your free-wash progress")}</h2></div><button type="button" aria-label={t("View all rewards")} onClick={() => setTab("rewards")} className="min-h-11 text-sm font-bold text-[color:var(--blue)]">{t("View rewards")}</button></div><LoyaltyOverview loyalty={loyalty} /></section>
               </div>}
 
+              {tab === "wallet" && <CustomerWallet />}
               {tab === "rewards" && <LoyaltyRewards loyalty={loyalty} lang={lang} />}
 
               {tab === "bookings" && (
@@ -759,6 +762,7 @@ export default function AccountPage() {
                           cancelling={paymentAction === `cancel-booking:${booking.id}`}
                           onPay={() => handleCompleteBookingPayment(booking)}
                           onCancel={() => handleCancel(booking.id)}
+                          onRefundRequested={() => { setTab("wallet"); void refresh(); }}
                           onReschedule={() => loadRescheduleOptions(booking, qatarServiceDate(booking.scheduled_at))}
                         />
                       ))}
@@ -1044,6 +1048,7 @@ function BookingCard({
   onPay,
   onCancel,
   onReschedule,
+  onRefundRequested,
 }: {
   booking: Booking;
   busy: boolean;
@@ -1052,6 +1057,7 @@ function BookingCard({
   onPay: () => void;
   onCancel: () => void;
   onReschedule: () => void;
+  onRefundRequested?: () => void;
 }) {
   const { lang, t } = useI18n();
   const when = formatQatarDateTime(booking.scheduled_at, lang, {
@@ -1172,6 +1178,7 @@ function BookingCard({
           )}
         </div>
       </div>
+      {onRefundRequested && <BookingRefundRequest booking={booking} busy={busy} onRequested={onRefundRequested} />}
     </article>
   );
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { validateWalletSummary, validateWalletMovement, validateWalletReservation, validateCustomerRefund, validateWalletPage } from "./wallet-types";
+import type { WalletSummary, WalletMovement, WalletReservation, CustomerRefund, WalletPage } from "./wallet-types";
+
 import type {
   Address,
   Availability,
@@ -134,6 +137,32 @@ async function request<T>(
     );
   }
   return envelope.data;
+}
+
+export async function getCustomerWallet() {
+  return validateWalletSummary(await request<WalletSummary>("/wallet"));
+}
+
+export async function listWalletMovements(page = 1) {
+  return validateWalletPage(await request<WalletPage<WalletMovement>>(`/wallet/movements?page=${page}`), validateWalletMovement);
+}
+
+export async function listWalletReservations(page = 1) {
+  return validateWalletPage(await request<WalletPage<WalletReservation>>(`/wallet/reservations?page=${page}`), validateWalletReservation);
+}
+
+export async function listCustomerRefunds(page = 1) {
+  return validateWalletPage(await request<WalletPage<CustomerRefund>>(`/refunds?page=${page}`), validateCustomerRefund);
+}
+
+export async function chooseRefundDestination(id: number, destination: "original_payment" | "customer_wallet") {
+  return validateCustomerRefund(await request<CustomerRefund>(`/refunds/${id}/settlement-choice`, {
+    method: "POST", body: { settlement_destination: destination },
+  }));
+}
+
+export function requestBookingRefund(id: number, reason: string) {
+  return request<{ id: number; status: string; requested_amount: number }>(`/bookings/${id}/refund-request`, { method: "POST", body: { reason } });
 }
 
 // ── Public catalog ───────────────────────────────────────────────────────────

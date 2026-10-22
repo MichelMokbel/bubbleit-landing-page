@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-10-22] Customer wallet management and refunds
+
+- Add Account → Wallet with exact available/reserved/total credit, activity, live holds and private refund history. Customers can request booking refunds and explicitly consent to eligible wallet credit before approval. Preserve unavailable balances, frozen choices, English/Arabic layouts and the existing secure BFF session boundary. Public split checkout remains disabled.
+
 ## [2026-10-16] Customer wallet schema foundation
 
 - Mirror additive backend wallet summary, activity and refund destination definitions. No wallet checkout, BFF or membership wash behavior change in this stage.

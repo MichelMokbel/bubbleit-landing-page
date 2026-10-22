@@ -43,3 +43,7 @@ Paths in code and commands are relative to the repository root. These rules also
 - [Contract and locale helpers](../lib/AGENTS.md)
 
 _Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._
+
+## Account wallet and refunds
+
+Account → Wallet consumes owner balance, paginated activity, live holds and refund history through the existing BFF. Validate QAR minor amounts and summary consistency; failed or malformed data renders unavailable with retry. Refresh on focus, explicit retry and successful mutation. Destination changes require backend capability, an explicit owner choice and consent to credit terms. Approval remains distinct from settled credit. Booking refund forms submit reason only; the backend derives the remaining refundable amount. Public checkout spending remains gated until the split funding release is implemented.
