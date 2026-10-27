@@ -1,5 +1,11 @@
 # Customer routes, sessions, and account security
 
+## Owner wallet review and recovery (2026-10-26)
+
+`/account/payments/{purchase}` uses the existing HttpOnly BFF session and explicit owner confirmation of the full purchase, selected wallet amount and remainder method. New checkout wallet intent defers provider initialization; staff links never authorize spending. Read/confirm/cancel stay owner scoped and private/no-store. Backend exact facts own holds and paid state; no optimistic credit, browser-return payment proof or new polling. Follow an existing wallet review path during account recovery rather than starting legacy full-price payment.
+
+Refund history distinguishes staff-recorded actual external returns from local settlement progress and never exposes raw evidence or provider/source/accounting identifiers. Cancellation-held memberships cannot offer wash redemption. A late anonymous 401 must not expire a session cookie established by a newer successful login; expire only a token-bearing rejected session.
+
 ## Overview
 
 The customer BFF, session cookies, authentication, account pages, and security policy.
@@ -47,3 +53,7 @@ _Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a 
 ## Account wallet and refunds
 
 Account → Wallet consumes owner balance, paginated activity, live holds and refund history through the existing BFF. Validate QAR minor amounts and summary consistency; failed or malformed data renders unavailable with retry. Refresh on focus, explicit retry and successful mutation. Destination changes require backend capability, an explicit owner choice and consent to credit terms. Approval remains distinct from settled credit. Booking refund forms submit reason only; the backend derives the remaining refundable amount. Public checkout spending remains gated until the split funding release is implemented.
+
+## Source refund progress (2026-10-26)
+
+Owner wallet refunds optionally include safe settlement legs. Validate exact positive amounts, unique sequence, known status/destination and agreement with aggregate settled/approved totals. Show each wallet/original-payment portion and its own progress in English/Arabic; extra-payment returns are labeled separately. Keep provider references, actual source IDs and accounting facts outside owner resources. These readers keep can_spend false and do not enable public checkout.

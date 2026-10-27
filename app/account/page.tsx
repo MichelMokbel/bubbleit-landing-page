@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { AuthPanel } from "@/components/booking/AuthPanel";
 import { HourSlotPicker } from "@/components/booking/HourSlotPicker";
+import { WalletPaymentButton } from "@/components/account/WalletPaymentButton";
 import { CustomerWallet } from "@/components/account/CustomerWallet";
 import { BookingRefundRequest } from "@/components/account/BookingRefundRequest";
 import { CustomerNotifications } from "@/components/account/CustomerNotifications";
@@ -397,6 +398,7 @@ export default function AccountPage() {
   }
 
   async function handleCompleteBookingPayment(booking: Booking) {
+    if (booking.wallet_review_path && /^\/account\/payments\/[1-9][0-9]*$/.test(booking.wallet_review_path)) {window.location.assign(booking.wallet_review_path);return;}
     const action = `booking:${booking.id}`;
     if (paymentAction) return;
     setPaymentAction(action);
@@ -419,6 +421,7 @@ export default function AccountPage() {
   }
 
   async function handleCompleteStorePayment(order: StoreOrder) {
+    if (order.wallet_review_path && /^\/account\/payments\/[1-9][0-9]*$/.test(order.wallet_review_path)) {window.location.assign(order.wallet_review_path);return;}
     const action = `order:${order.id}`;
     if (paymentAction) return;
     setPaymentAction(action);
@@ -592,7 +595,7 @@ export default function AccountPage() {
       return searchable.includes(query);
     });
   }, [bookingFilter, bookingSearch, sortedBookings]);
-  const activeMemberships = (memberships ?? []).filter((membership) => membership.status === "active" && membership.washes_remaining > 0);
+  const activeMemberships = (memberships ?? []).filter((membership) => membership.status === "active" && !membership.refund_cancellation_pending && membership.washes_remaining > 0);
 
   return (
     <>
@@ -996,6 +999,7 @@ function StoreOrderCard({
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--border)] pt-4">
         <span className="font-bold" dir="ltr">{formatQar(order.total, lang)}</span>
         <div className="flex flex-wrap gap-2">
+          {(order.wallet_payment_available || order.wallet_review_path) && <WalletPaymentButton subjectType="store_order" subjectId={order.id} reviewPath={order.wallet_review_path} />}
           {canPay && <button type="button" className="primary-button min-h-9 px-4 py-2 text-xs" disabled={busy} onClick={onPay}>{busy ? t("Checking payment…") : t("Complete payment")}</button>}
           {canCancel && <button type="button" className="secondary-button min-h-9 px-4 py-2 text-xs text-red-600 hover:border-red-400 hover:text-red-600" disabled={busy} onClick={onCancel}>{t("Cancel order")}</button>}
           <Link href="/store" className="secondary-button min-h-9 px-4 py-2 text-xs">{t("Shop again")}</Link>
@@ -1015,7 +1019,7 @@ function MembershipCard({
   onCancel: () => void;
 }) {
   const { lang, t } = useI18n();
-  const active = membership.status === "active" && membership.washes_remaining > 0;
+  const active = membership.status === "active" && !membership.refund_cancellation_pending && membership.washes_remaining > 0;
   const reconciliationRequired = membership.payment?.status === "reconciliation_required";
   const cashDue = membership.payment?.status === "cash_due";
   const expiry = membership.expires_at
@@ -1030,8 +1034,10 @@ function MembershipCard({
       </div>
       <div className="mt-4 flex items-end justify-between gap-4"><p><span className="text-3xl font-extrabold text-[color:var(--navy)]">{membership.washes_remaining}</span><span className="ms-2 text-sm font-semibold text-[color:var(--muted-foreground)]">{t("washes left")}</span></p>{expiry && <p className="text-xs font-medium text-[color:var(--muted-foreground)]">{t("Expires")} {expiry}</p>}</div>
       {reconciliationRequired && <p role="alert" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">{t("Payment received after this membership closed. It was not reactivated, and our team is arranging the required refund.")}</p>}
+      {membership.refund_cancellation_pending && <p role="status" className="mt-4">{t("Cancellation refund pending. Membership benefits are on hold.")}</p>}
       {cashDue && <p role="status" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">{t("Cash due. This membership remains inactive until an authorized team member records the full payment.")}</p>}
       <div className="mt-auto flex flex-col gap-2 pt-5 sm:flex-row">
+        {(membership.wallet_payment_available || membership.wallet_review_path) && <WalletPaymentButton subjectType="membership" subjectId={membership.id} reviewPath={membership.wallet_review_path} />}
         {active && <Link href="/book" className="primary-button flex-1 px-4">{t("Book a Wash")}</Link>}
         {cashDue && <button type="button" disabled={busy} onClick={onCancel} className="secondary-button flex-1 px-4 text-red-600 hover:border-red-400 hover:text-red-600">{t("Cancel membership")}</button>}
         <Link href="/memberships" className="secondary-button flex-1 px-4">{t(active ? "View plans" : "Renew plan")}</Link>
@@ -1150,6 +1156,7 @@ function BookingCard({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--border)] pt-4">
         <span className="font-bold" dir="ltr">{formatQar(booking.total, lang)}</span>
         <div className="flex flex-wrap gap-2">
+          {(booking.wallet_payment_available || booking.wallet_review_path) && <WalletPaymentButton subjectType="booking" subjectId={booking.id} reviewPath={booking.wallet_review_path} />}
           {paymentRequired && (
             <button type="button" className="primary-button min-h-9 px-4 py-2 text-xs" disabled={busy} onClick={onPay}>
               {paying ? t("Checking payment…") : t("Complete payment")}

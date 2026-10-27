@@ -1,4 +1,8 @@
 "use client";
+import {useRouter} from 'next/navigation';
+import {WalletIntentSelector} from '@/components/payments/WalletIntentSelector';
+import {prepareWalletPurchase} from '@/lib/api/client';
+
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
@@ -346,6 +350,8 @@ export function BookingWizard() {
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [paymentRetrying, setPaymentRetrying] = useState(false);
   const [paymentOptions, setPaymentOptions] = useState<PaymentOptions | null>(null);
+  const router = useRouter();
+  const [walletIntent,setWalletIntent] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("skipcash_hosted");
   const bookingAttemptRef = useRef<string | null>(null);
   const vehicleIdempotencyEntriesRef = useRef(new Map<string, VehicleIdempotencyEntry>());
@@ -353,6 +359,7 @@ export function BookingWizard() {
   const redeemableMemberships = useMemo(
     () => memberships.filter((membership) => (
       membership.status === "active"
+      && !membership.refund_cancellation_pending
       && membership.washes_remaining > 0
     )),
     [memberships],
@@ -1170,6 +1177,7 @@ export function BookingWizard() {
       let booking: Booking;
       if (membershipMode && selectedMembership && cars[0].vehicleId) {
         booking = await createBooking({
+          ...(walletIntent && dueTotal > 0 ? {funding_intent: 'customer_wallet' as const} : {}),
           membership_id: selectedMembership.id,
           vehicle_id: cars[0].vehicleId,
           scheduled_at: serializeQatarBookingDateTime(date, slot),
@@ -1208,6 +1216,7 @@ export function BookingWizard() {
         }
 
         booking = await createBooking({
+          ...(walletIntent && dueTotal > 0 ? {funding_intent: 'customer_wallet' as const} : {}),
           quote_id: quote.quote_id,
           quote_version: quote.quote_version,
           scheduled_at: serializeQatarBookingDateTime(date, slot),
@@ -1226,6 +1235,12 @@ export function BookingWizard() {
         }, `${attemptKey}:booking`);
       }
 
+      if (walletIntent && dueTotal > 0) {
+        const review = await prepareWalletPurchase('booking',booking.id);
+        clearBookingAttempt();
+        router.push(review.review_path);
+        return;
+      }
       if (booking.payment?.status === "cash_due") {
         clearBookingAttempt();
         setConfirmed(booking);
@@ -1827,7 +1842,8 @@ export function BookingWizard() {
               </div>
             )}
 
-            {authed && !quoteLoading && (membershipMode || quote) && dueTotal > 0 && (
+            {authed && dueTotal > 0 && <WalletIntentSelector available={paymentOptions?.wallet_available} checked={walletIntent} onChange={value=>{setWalletIntent(value);clearBookingAttempt();}} />}
+            {!walletIntent && authed && !quoteLoading && (membershipMode || quote) && dueTotal > 0 && (
               <PaymentMethodSelector
                 options={paymentOptions}
                 value={paymentChannel}

@@ -106,6 +106,10 @@ try {
   assert.equal(reset.status, 200);
   assert.match(reset.headers.get("set-cookie") ?? "", /Max-Age=0/i);
 
+  const anonymous = await fetch(`${origin}/api/customer/auth/me`);
+  assert.equal(anonymous.status, 401);
+  assert.equal(anonymous.headers.get("set-cookie"), null, "A late anonymous failure must not clear a newly established session.");
+
   const revoked = await fetch(`${origin}/api/customer/auth/me`, {
     headers: { Cookie: cookie },
   });

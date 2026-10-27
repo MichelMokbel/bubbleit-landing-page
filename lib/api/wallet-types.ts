@@ -17,7 +17,15 @@ export type WalletMovement = {
   occurred_at: string;
 };
 export type WalletReservation = { id: number; amount_minor: number; currency: "QAR"; expires_at: string };
+export type RefundSourceSettlement = {
+  sequence: number; source: 'customer_wallet' | 'original_payment';
+  destination: 'customer_wallet' | 'original_payment'; amount_minor: number; currency: 'QAR';
+  status: 'planned' | 'processing' | 'succeeded' | 'retryable' | 'quarantined';
+};
 export type CustomerRefund = {
+  recorded_return?: {amount_minor:number;currency:'QAR';method:'cash'|'bank_transfer';confirmed_at:string}|null;
+  refund_scope?: 'purchase_consideration' | 'unapplied_receipt';
+  settlements?: RefundSourceSettlement[];
   id: number; reference: string; status: string; currency: "QAR"; amount_minor: number;
   settled_amount_minor: number; pending_amount_minor: number; reason: string;
   booking_id: number | null; subject_type: string | null; subject_reference: string | null;
@@ -52,6 +60,26 @@ export function validateCustomerRefund(value: CustomerRefund): CustomerRefund {
       || value.settled_amount_minor + value.pending_amount_minor > value.amount_minor
       || !["original_payment", "customer_wallet"].includes(value.settlement_destination)
       || typeof value.can_choose_destination !== "boolean" || typeof value.wallet_credit_available !== "boolean") throw new Error("Invalid customer refund");
+  const recorded = value.recorded_return;
+  if (recorded != null && (!minor(recorded.amount_minor) || recorded.amount_minor === 0 || recorded.amount_minor > value.amount_minor
+      || recorded.currency !== 'QAR' || !['cash','bank_transfer'].includes(recorded.method) || !instant(recorded.confirmed_at))) throw new Error('Invalid recorded return');
+  if (value.settlements !== undefined) {
+    if (!Array.isArray(value.settlements)) throw new Error('Invalid refund settlements');
+    const sequences = new Set<number>();
+    let total = 0;
+    let settled = 0;
+    for (const leg of value.settlements) {
+      if (!leg || !minor(leg.sequence) || leg.sequence === 0 || sequences.has(leg.sequence)
+          || !minor(leg.amount_minor) || leg.amount_minor === 0 || leg.currency !== 'QAR'
+          || !['customer_wallet', 'original_payment'].includes(leg.source)
+          || !['customer_wallet', 'original_payment'].includes(leg.destination)
+          || !['planned', 'processing', 'succeeded', 'retryable', 'quarantined'].includes(leg.status)) throw new Error('Invalid refund settlement');
+      sequences.add(leg.sequence); total += leg.amount_minor;
+      if (leg.status === 'succeeded') settled += leg.amount_minor;
+    }
+    if (value.settlements.length && (total !== value.amount_minor || settled !== value.settled_amount_minor)) throw new Error('Inconsistent refund settlements');
+  }
+  if (value.refund_scope !== undefined && !['purchase_consideration', 'unapplied_receipt'].includes(value.refund_scope)) throw new Error('Invalid refund scope');
   return value;
 }
 export function validateWalletPage<T>(value: WalletPage<T>, validate: (item: T) => T): WalletPage<T> {

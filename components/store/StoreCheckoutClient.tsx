@@ -1,4 +1,8 @@
 "use client";
+import {useRouter} from 'next/navigation';
+import {WalletIntentSelector} from '@/components/payments/WalletIntentSelector';
+import {prepareWalletPurchase} from '@/lib/api/client';
+
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
@@ -248,6 +252,8 @@ export function StoreCheckoutClient() {
   const [catalogAttempt, setCatalogAttempt] = useState(0);
   const [step, setStep] = useState<CheckoutStep>("location");
   const [paymentOptions, setPaymentOptions] = useState<PaymentOptions | null>(null);
+  const router = useRouter();
+  const [walletIntent,setWalletIntent] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("skipcash_hosted");
 
   const applySavedAddress = useCallback((address: Address) => {
@@ -690,6 +696,10 @@ export function StoreCheckoutClient() {
       return "completed";
     }
 
+    if (checkout.order.wallet_review_path) {
+      router.push(checkout.order.wallet_review_path);
+      return "redirecting";
+    }
     setSubmitPhase("initializing_payment");
     setError(null);
     setPaymentNotice(null);
@@ -775,6 +785,7 @@ export function StoreCheckoutClient() {
       }
       const serviceArea = await validateServiceArea(geo.lat, geo.lng);
       const payload = {
+        ...(walletIntent ? {funding_intent: 'customer_wallet' as const} : {}),
         delivery_area: area.trim() || "Qatar",
         delivery_details: [
           `Building ${buildingNumber.trim()}`,
@@ -806,6 +817,12 @@ export function StoreCheckoutClient() {
         throw new Error(t("The created order does not match the price you confirmed."));
       }
       const checkout = savePendingCheckout(order, attempt, customer.id);
+      if (walletIntent) {
+        const review = await prepareWalletPurchase('store_order',order.id);
+        router.push(review.review_path);
+        redirecting = true;
+        return;
+      }
 
       if (isCompletedOrder(order)) {
         completeOrder(order);
@@ -1175,11 +1192,12 @@ export function StoreCheckoutClient() {
                 </section>
 
                 <section className="commerce-card p-5 sm:p-7">
-                  <PaymentMethodSelector
+                  <WalletIntentSelector available={paymentOptions?.wallet_available} checked={walletIntent} onChange={setWalletIntent} />
+                  {!walletIntent && <PaymentMethodSelector
                     options={paymentOptions}
                     value={paymentChannel}
                     onChange={setPaymentChannel}
-                  />
+                  />}
                 </section>
 
                 {pendingCheckout && submitPhase === "redirecting" ? (

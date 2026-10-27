@@ -14,6 +14,7 @@ const REFUND_LABELS: Record<string, string> = {
   rejected: "Refund declined", processed: "Refund completed",
 };
 
+const SETTLEMENT_LABELS = { planned: "Awaiting refund execution", processing: "Refund processing", succeeded: "Refund completed", retryable: "Refund needs another attempt", quarantined: "Refund requires review" };
 const MOVEMENT_LABELS = { refund_credit: "Refund credit", purchase_payment: "Wallet payment", correction_reversal: "Balance correction" };
 const DIRECTION_LABELS = { credit: "Credit", debit: "Debit" };
 const DESTINATION_LABELS = { customer_wallet: "Customer wallet", original_payment: "Original payment method" };
@@ -70,8 +71,8 @@ export function CustomerWallet() {
       <button type="button" className="secondary-button min-h-11 px-4" onClick={refresh} disabled={loading}>{t("Refresh wallet")}</button>
     </div>
     {actionError && <AppToast message={t("Could not save your refund choice. Refresh and try again.")} dismissLabel={t("Dismiss")} onDismiss={() => setActionError(false)} />}
-    {saved && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-emerald-900">{t("Refund destination saved. Approval does not add credit; credit appears after execution.")}</p>}
-    {error ? <div role="alert" className="commerce-card p-5"><p>{t("Wallet information is unavailable. Please try again.")}</p><button type="button" className="secondary-button mt-3 min-h-11 px-4" onClick={refresh}>{t("Try again")}</button></div> : loading && !summary ? <div className="grid gap-3 sm:grid-cols-3" aria-label={t("Loading wallet")}>
+    {saved && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-emerald-900">{t("Refund destination saved. Credit appears when our team completes the refund.")}</p>}
+    {error ? <div role="alert" className="commerce-card p-5"><p>{t("Wallet information is unavailable. Please try again.")}</p><button type="button" className="secondary-button mt-3 min-h-11 px-4" onClick={refresh}>{t("Try again")}</button></div> : loading && !summary ? <div role="status" className="grid gap-3 sm:grid-cols-3" aria-label={t("Loading wallet")}>
       {[0, 1, 2].map((key) => <div key={key} className="commerce-card h-28 animate-pulse bg-slate-100 motion-reduce:animate-none" />)}
     </div> : summary && activity && holds && refunds && <>
       <dl className="grid gap-3 sm:grid-cols-3">
@@ -94,6 +95,11 @@ export function CustomerWallet() {
           <p className="font-semibold">{t(refundStatusLabel(refund))}</p>
           <p>{t(DESTINATION_LABELS[refund.settlement_destination])}</p>
           <p className="text-sm">{t("Settled")}: {money(refund.settled_amount_minor)} · {t("Pending")}: {money(refund.pending_amount_minor)}</p>
+          {refund.recorded_return && <p className="text-sm">{t("Staff recorded money returned to you")}: {money(refund.recorded_return.amount_minor)} · {t(refund.recorded_return.method === 'cash' ? 'Cash' : 'Bank transfer')}</p>}
+          {refund.refund_scope === 'unapplied_receipt' && <p>{t("Return of an extra payment")}</p>}
+          {!!refund.settlements?.length && <ul className="space-y-2" aria-label={t("Refund progress")}>{refund.settlements.map((leg) => <li key={leg.sequence} className="flex flex-wrap justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm">
+            <span>{t(DESTINATION_LABELS[leg.destination])} · {t(SETTLEMENT_LABELS[leg.status])}</span><strong>{money(leg.amount_minor)}</strong>
+          </li>)}</ul>}
           <p className="break-words text-sm text-[color:var(--muted-foreground)]">{refund.reason}</p>
           <RefundDestinationForm key={`${refund.id}-${refund.settlement_destination}`} refund={refund} busy={busy !== null || loading} onSave={(destination) => choose(refund.id, destination)} />
         </article>)}</div>}

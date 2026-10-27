@@ -21,3 +21,21 @@ test('financial activity rejects malformed source facts and page metadata', () =
 test('customer refund totals cannot invent settled money', () => {
   assert.throws(() => validateCustomerRefund({ id: 1, reference: 'REF-000001', status: 'approved', currency: 'QAR', amount_minor: 10000, settled_amount_minor: 10001, pending_amount_minor: 0, reason: '', booking_id: null, subject_type: 'booking', subject_reference: null, settlement_destination: 'customer_wallet', can_choose_destination: false, wallet_credit_available: false, wallet_consent_at: summary.as_of, created_at: summary.as_of, processed_at: null }));
 });
+
+test('source settlements require exact totals and never infer pending money as returned', () => {
+  const value = { id: 1, reference: 'REF-000001', status: 'processing', currency: 'QAR' as const, amount_minor: 10000, settled_amount_minor: 3000, pending_amount_minor: 7000, reason: '', booking_id: null, subject_type: 'booking', subject_reference: null, settlement_destination: 'original_payment' as const, can_choose_destination: false, wallet_credit_available: false, wallet_consent_at: null, created_at: summary.as_of, processed_at: null, settlements: [
+    { sequence: 1, source: 'customer_wallet' as const, destination: 'customer_wallet' as const, currency: 'QAR' as const, amount_minor: 3000, status: 'succeeded' as const },
+    { sequence: 2, source: 'original_payment' as const, destination: 'original_payment' as const, currency: 'QAR' as const, amount_minor: 7000, status: 'processing' as const },
+  ] };
+  assert.equal(validateCustomerRefund(value).settled_amount_minor, 3000);
+  assert.throws(() => validateCustomerRefund({ ...value, settled_amount_minor: 10000, pending_amount_minor: 0 }));
+  assert.throws(() => validateCustomerRefund({ ...value, settlements: [{ ...value.settlements[0], amount_minor: 3000.1 }, value.settlements[1]] }));
+  assert.throws(() => validateCustomerRefund({ ...value, settlements: [value.settlements[0], { ...value.settlements[1], sequence: 1 }] }));
+});
+
+test('staff-recorded external return remains visible during local projection recovery', () => {
+  const refund = { id: 1, reference: 'REF-000001', status: 'processing', currency: 'QAR' as const, amount_minor: 10000, settled_amount_minor: 0, pending_amount_minor: 10000, reason: '', booking_id: null, subject_type: 'booking', subject_reference: null, settlement_destination: 'original_payment' as const, can_choose_destination: false, wallet_credit_available: false, wallet_consent_at: null, created_at: summary.as_of, processed_at: null, recorded_return: {amount_minor:7000,currency:'QAR' as const,method:'bank_transfer' as const,confirmed_at:summary.as_of} };
+  assert.equal(validateCustomerRefund(refund).recorded_return?.amount_minor,7000);
+  assert.throws(()=>validateCustomerRefund({...refund,recorded_return:{...refund.recorded_return,amount_minor:10001}}));
+  assert.throws(()=>validateCustomerRefund({...refund,recorded_return:{...refund.recorded_return,confirmed_at:'invalid'}}));
+});

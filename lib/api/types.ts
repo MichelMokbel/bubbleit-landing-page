@@ -217,6 +217,7 @@ export type CustomerLoyalty = {
 };
 export type PaymentChannel = "cash" | "skipcash_hosted" | "skipcash_qpay" | "membership";
 export type PaymentOptions = {
+  wallet_available?: boolean;
   mode: "cash" | "online";
   methods: { channel: PaymentChannel; label: string }[];
 };
@@ -272,6 +273,9 @@ export type MembershipPlan = {
 };
 
 export type CustomerMembership = {
+  refund_cancellation_pending?: boolean;
+  wallet_payment_available?: boolean;
+  wallet_review_path?: string | null;
   id: number;
   status: "pending_payment" | "active" | "exhausted" | "expired" | "cancelled";
   washes_used: number;
@@ -331,6 +335,8 @@ export type BookingCar = {
 };
 
 export type Booking = {
+  wallet_payment_available?: boolean;
+  wallet_review_path?: string | null;
   id: number;
   reference: string;
   status: BookingStatus;
@@ -404,6 +410,7 @@ export type PasswordResetGrant = {
 };
 
 export type CreateBookingPayload = {
+  funding_intent?: 'customer_wallet';
   quote_id?: string;
   quote_version?: string;
   scheduled_at: string;
@@ -596,6 +603,8 @@ export type StorePricingConfirmation = {
 };
 
 export type StoreOrder = {
+  wallet_payment_available?: boolean;
+  wallet_review_path?: string | null;
   id: number;
   reference: string;
   status_label: string;
@@ -644,6 +653,7 @@ export type StoreOrder = {
 };
 
 export type CreateStoreOrderPayload = {
+  funding_intent?: 'customer_wallet';
   delivery_area: string;
   delivery_details: string;
   building_number?: string;

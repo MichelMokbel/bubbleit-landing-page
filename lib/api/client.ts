@@ -497,10 +497,13 @@ export function getMembershipBookingOptions(
   );
 }
 
-export function buyMembership(planId: number, idempotencyKey: string) {
+export function buyMembership(planId: number, idempotencyKey: string): Promise<CustomerMembership>;
+export function buyMembership(planId: number, idempotencyKey: string, fundingIntent: "customer_wallet"): Promise<CustomerMembership>;
+export function buyMembership(planId: number, idempotencyKey: string, fundingIntent?: "customer_wallet"): Promise<CustomerMembership>;
+export function buyMembership(planId: number, idempotencyKey: string, fundingIntent?: "customer_wallet") {
   return request<CustomerMembership>("/memberships", {
     method: "POST",
-    body: { plan_id: planId },
+    body: { plan_id: planId, ...(fundingIntent ? {funding_intent: fundingIntent} : {}) },
     headers: { "Idempotency-Key": idempotencyKey },
   });
 }
@@ -617,4 +620,21 @@ export function rescheduleBooking(
     body: payload,
     headers: { "Idempotency-Key": idempotencyKey },
   });
+}
+
+export async function prepareWalletPurchase(subjectType: import('./funding-types').PurchaseSubject, subjectId: number) {
+  const { validateFundingReview } = await import('./funding-types');
+  return validateFundingReview(await request<import('./funding-types').FundingReview>('/purchase-funding/prepare', {method: 'POST', body: {subject_type: subjectType, subject_id: subjectId}}));
+}
+export async function getWalletPurchase(purchaseId: number) {
+  const { validateFundingReview } = await import('./funding-types');
+  return validateFundingReview(await request<import('./funding-types').FundingReview>(`/purchase-funding/${purchaseId}`));
+}
+export async function confirmWalletPurchase(purchaseId: number, body: {wallet_amount: string; external_channel: import('./funding-types').FundingChannel | null; command_key: string}) {
+  const { validateFundingReview } = await import('./funding-types');
+  return validateFundingReview(await request<import('./funding-types').FundingReview>(`/purchase-funding/${purchaseId}/confirm`, {method: 'POST', body}));
+}
+export async function cancelWalletPurchase(purchaseId: number, fundingPlanId: number) {
+  const { validateFundingReview } = await import('./funding-types');
+  return validateFundingReview(await request<import('./funding-types').FundingReview>(`/purchase-funding/${purchaseId}/cancel`, {method: 'POST', body: {funding_plan_id: fundingPlanId}}));
 }

@@ -1,4 +1,8 @@
 "use client";
+import {useRouter} from 'next/navigation';
+import {WalletIntentSelector} from '@/components/payments/WalletIntentSelector';
+import {prepareWalletPurchase} from '@/lib/api/client';
+
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
@@ -94,6 +98,8 @@ export default function MembershipsPage() {
   const [bought, setBought] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentOptions, setPaymentOptions] = useState<PaymentOptions | null>(null);
+  const router = useRouter();
+  const [walletIntent,setWalletIntent] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<PaymentChannel>("skipcash_hosted");
 
   const refreshMine = useCallback(() => {
@@ -162,9 +168,14 @@ export default function MembershipsPage() {
     setBusy(true);
     try {
       const attempt = membershipAttempt(plan.id);
-      const result = await buyMembership(plan.id, attempt.purchaseKey);
+      const result = await buyMembership(plan.id, attempt.purchaseKey, walletIntent ? 'customer_wallet' : undefined);
       const linkedAttempt = { ...attempt, membershipId: result.id };
       saveMembershipAttempt(linkedAttempt);
+      if (walletIntent) {
+        const review = await prepareWalletPurchase('membership',result.id);
+        router.push(review.review_path);
+        return;
+      }
       const payment = await initializeMembershipPayment(
         result.id,
         linkedAttempt.paymentKey,
@@ -431,7 +442,8 @@ export default function MembershipsPage() {
                 </dl>
               </div>
               <div className="flex items-end justify-between border-t border-slate-200 pt-4"><div><p className="text-sm font-semibold text-[color:var(--muted-foreground)]">{t("Total")}</p><p className="mt-1 text-xs text-[color:var(--muted-foreground)]"><bdi dir="ltr">{formatQar(buyingPlan.price / buyingPlan.washes_count, lang, 0)}</bdi> / {t("wash")}</p></div><p className="text-3xl font-extrabold text-[color:var(--navy)]" dir="ltr">{formatQar(buyingPlan.price, lang)}</p></div>
-              <PaymentMethodSelector options={paymentOptions} value={paymentChannel} onChange={setPaymentChannel} />
+              <WalletIntentSelector available={paymentOptions?.wallet_available} checked={walletIntent} onChange={setWalletIntent} />
+              {!walletIntent && <PaymentMethodSelector options={paymentOptions} value={paymentChannel} onChange={setPaymentChannel} />}
             </div>
 
             <div className="grid grid-cols-2 gap-2 border-t border-slate-200 bg-slate-50 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-5">

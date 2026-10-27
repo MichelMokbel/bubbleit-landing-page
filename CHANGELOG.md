@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-26
+
+### Changed
+
+- Add explicit owner wallet review and full/split purchase confirmation through the secure BFF, wallet intent before monetary checkout, and account recovery to existing plans. Preserve backend full prices and included membership benefits.
+- Display safe actual-return summaries and cancellation holds; protect newly established sessions from late anonymous 401 responses. Add a disposable PostgreSQL/BFF journey gate; no deployment or live provider acceptance is claimed.
+
+- Validate and display optional safe source-refund progress, with mixed English/Arabic presentation and narrow RTL coverage. Preserve default-off spending capabilities and owner privacy.
+
 ## [2026-10-22] Customer wallet management and refunds
 
 - Add Account → Wallet with exact available/reserved/total credit, activity, live holds and private refund history. Customers can request booking refunds and explicitly consent to eligible wallet credit before approval. Preserve unavailable balances, frozen choices, English/Arabic layouts and the existing secure BFF session boundary. Public split checkout remains disabled.

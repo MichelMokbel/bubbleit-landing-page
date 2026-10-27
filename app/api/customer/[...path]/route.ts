@@ -176,7 +176,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
     response.headers.set("X-Session-Ended", "true");
   }
   if (
-    upstream.status === 401 ||
+    (upstream.status === 401 && Boolean(token)) ||
     path === "auth/logout" ||
     (path === "privacy/delete-account" && upstream.ok) ||
     upstream.headers.get("x-reauthentication-required") === "true"
